@@ -9,11 +9,25 @@ from copthief.strategy.base import Strategy, chebyshev
 
 
 class HeuristicStrategy(Strategy):
-    """Cop minimises distance to the thief; thief maximises distance from the cop."""
+    """Cop minimises distance to the thief; thief maximises distance from the cop.
+
+    When ``use_barriers`` is enabled the cop places a barrier only when it is *needed*:
+    it cannot get any closer to the thief this turn (every reachable cell keeps or
+    increases the distance) and the thief is not yet adjacent. Sealing the cop's cell
+    then helps contain the thief instead of wasting the turn. It never blocks when it
+    can advance or capture, so on open boards barriers are rarely used.
+    """
+
+    def __init__(self, use_barriers: bool = False):
+        self.use_barriers = use_barriers
 
     def decide(self, obs: Observation, opponent: Position, board: Board) -> Move:
         """Pick the neighbour that best serves the agent's role objective."""
         here = obs.self_pos
+        if (self.use_barriers and obs.role is Role.COP and obs.barriers_left > 0
+                and self._should_block(here, opponent, board)):
+            return Move(obs.role, Action.BLOCK)
+
         candidates = board.free_neighbours(here)
         if not candidates:
             return Move(obs.role, Action.STAY)
@@ -44,6 +58,18 @@ class HeuristicStrategy(Strategy):
         near = min(chebyshev(c, opponent) for c in candidates)
         best = [c for c in candidates if chebyshev(c, opponent) == near]
         return min(best, key=lambda c: _thief_escapes(opponent, c, board))
+
+
+    @staticmethod
+    def _should_block(here: Position, opponent: Position, board: Board) -> bool:
+        """True only when the cop is stuck: not adjacent, yet no move gets it closer."""
+        if chebyshev(here, opponent) <= 1:
+            return False  # adjacent → capture, never block
+        candidates = board.free_neighbours(here)
+        if not candidates:
+            return False  # fully boxed in → STAY handles it
+        closest = min(chebyshev(c, opponent) for c in candidates)
+        return closest >= chebyshev(here, opponent)
 
 
 def _thief_escapes(thief: Position, cop_cell: Position, board: Board) -> int:

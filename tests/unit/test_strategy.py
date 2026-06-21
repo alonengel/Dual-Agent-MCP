@@ -48,6 +48,26 @@ def test_no_free_neighbours_stays() -> None:
     assert move.action is Action.STAY
 
 
+def test_cop_blocks_only_when_stuck(board: Board) -> None:
+    # Block the only distance-reducing neighbour so the cop cannot get closer.
+    board.add_barrier(Position(2, 2))
+    strat = HeuristicStrategy(use_barriers=True)
+    move = strat.decide(_obs(Role.COP, Position(1, 1)), Position(5, 5), board)
+    assert move.action is Action.BLOCK
+
+
+def test_cop_does_not_block_when_it_can_advance(board: Board) -> None:
+    strat = HeuristicStrategy(use_barriers=True)
+    move = strat.decide(_obs(Role.COP, Position(1, 1)), Position(5, 5), board)
+    assert move.action is Action.MOVE  # a diagonal step gets closer → no block
+
+
+def test_cop_skips_barrier_when_adjacent(board: Board) -> None:
+    strat = HeuristicStrategy(use_barriers=True)
+    move = strat.decide(_obs(Role.COP, Position(2, 2)), Position(3, 3), board)
+    assert move.action is Action.MOVE  # capture beats blocking
+
+
 def test_factory_builds_heuristic_by_default() -> None:
     assert isinstance(build_strategy({}), HeuristicStrategy)
 
