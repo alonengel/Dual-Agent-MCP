@@ -27,6 +27,8 @@ dev = [
     "pytest-cov>=5.0.0",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.6.0",
+    "jupyter>=1.1.0",
+    "nbconvert>=7.16.0",
 ]
 
 [build-system]
@@ -39,6 +41,7 @@ packages = ["src/copthief"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]

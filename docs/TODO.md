@@ -33,5 +33,6 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] No hardcoded game parameters (all in config)
 - [x] No secrets in source; `.env.example` with placeholders; `.gitignore` updated
 - [x] Mandatory docs: PRD, PLAN, TODO, PRD_strategy, README
-- [ ] Prompt-engineering log (`docs/PROMPTS.md`) — to be appended during development
-- [ ] Results analysis notebook + parameter-sweep visualizations (enhancement)
+- [x] Prompt-engineering log (`docs/PROMPTS.md`)
+- [x] Results analysis notebook + parameter-sweep visualizations (`notebooks/analysis.ipynb`)
+- [x] One-command local "cloud" launcher (`scripts/run_local_cloud.ps1`) + `netplay` CLI
