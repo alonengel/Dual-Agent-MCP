@@ -24,7 +24,12 @@ def _write_transcript(audit_path: Path, out_dir: Path) -> Path:
     lines = ["# CopThief — agent dialogue transcript", ""]
     for raw in audit_path.read_text(encoding="utf-8").splitlines():
         e = json.loads(raw)
-        if e.get("event") == "subgame_start":
+        if e.get("event") == "negotiation":
+            if "## Protocol negotiation" not in lines:
+                lines.append("## Protocol negotiation")
+                lines.append("")
+            lines.append(f"- **{e['role']}**: {e['message']}")
+        elif e.get("event") == "subgame_start":
             lines.append(f"\n## Subgame {e['index']} (cop {tuple(e['cop'])}, "
                          f"thief {tuple(e['thief'])})\n")
         elif e.get("event") == "turn":
