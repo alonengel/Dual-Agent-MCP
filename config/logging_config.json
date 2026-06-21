@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "level": "INFO",
+  "file_level": "DEBUG",
+  "log_dir": "logs",
+  "game_log_file": "game_audit.log",
+  "console": true,
+  "json_lines": true
+}

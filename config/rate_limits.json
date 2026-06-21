@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "rate_limits": {
+    "services": {
+      "default": {
+        "requests_per_minute": 30,
+        "requests_per_hour": 500,
+        "concurrent_max": 5,
+        "retry_after_seconds": 30,
+        "max_retries": 3
+      },
+      "llm": {
+        "requests_per_minute": 60,
+        "requests_per_hour": 1000,
+        "concurrent_max": 4,
+        "retry_after_seconds": 5,
+        "max_retries": 3
+      }
+    }
+  }
+}

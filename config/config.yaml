@@ -1,0 +1,53 @@
+# Central game + application configuration. No game parameter is hardcoded in source.
+version: "1.0.0"
+
+game:
+  grid_size: [5, 5]      # [width, height]; supports any size for sanity checks (2x2 .. 5x5)
+  max_moves: 25          # max moves per subgame before the thief survives
+  num_games: 6           # subgames per full game (3 as cop + 3 as thief in inter-group play)
+  max_barriers: 5        # max barriers the cop may place per subgame
+  origin: 1              # board origin (cells numbered starting at this value)
+  diagonal_moves: true   # movement allowed in all 8 directions
+
+scoring:
+  cop_win: 20
+  thief_win: 10
+  cop_loss: 5
+  thief_loss: 5
+
+bonus:
+  win: 10
+  lose: 7
+  tie: 5
+
+team:
+  group_name: "TeamCopThief"
+  students: []
+  github_repo: "https://github.com/your-org/copthief"
+  timezone: "Asia/Jerusalem"
+
+mcp:
+  transport: "http"          # HTTP transport even locally (prepares for cloud)
+  host: "127.0.0.1"
+  cop_url: "http://127.0.0.1:8181/mcp"
+  thief_url: "http://127.0.0.1:8182/mcp"
+  cop_port: 8181
+  thief_port: 8182
+
+llm:
+  provider: "mock"           # mock | ollama | api (overridable via COPTHIEF_LLM_PROVIDER)
+  model: "llama3.2"
+  api_kind: "openai"         # openai | anthropic | gemini (when provider=api)
+  temperature: 0.4
+  max_tokens: 512
+
+reporting:
+  email_to: "rmisegal+uoh26b@gmail.com"
+  results_dir: "results"
+
+strategy:
+  kind: "heuristic"          # heuristic | qtable
+  qtable:
+    learning_rate: 0.1
+    discount_factor: 0.9
+    epsilon: 0.1
