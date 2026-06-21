@@ -13,9 +13,16 @@ import sys
 from copthief.constants import Role
 
 
+def _email_report(sdk, path, subject: str) -> None:
+    """Email the saved JSON report via the Gmail API (fails safe if unconfigured)."""
+    from copthief.reporting.emailer import send_report_email
+
+    report = path.read_text(encoding="utf-8")
+    send_report_email(sdk.config.get("reporting.email_to", ""), subject, {"report": report})
+
+
 def _selfplay(args: argparse.Namespace) -> int:
     """Run a self-play match, save the report, optionally render/email it."""
-    from copthief.reporting.emailer import send_report_email
     from copthief.sdk import CopThiefSDK
 
     sdk = CopThiefSDK(seed=args.seed)
@@ -28,9 +35,7 @@ def _selfplay(args: argparse.Namespace) -> int:
 
         render_audit(sdk.audit.path, sdk.config.root)
     if args.email:
-        report = path.read_text(encoding="utf-8")
-        send_report_email(sdk.config.get("reporting.email_to", ""),
-                          "CopThief self-game report", {"report": report})
+        _email_report(sdk, path, "CopThief self-game report")
     return 0
 
 
@@ -42,6 +47,8 @@ def _netplay(args: argparse.Namespace) -> int:
     match = sdk.run_network_match()
     path = sdk.report_and_save(match)
     print(f"Totals: {match['totals']}\nReport: {path}")
+    if args.email:
+        _email_report(sdk, path, "CopThief inter-group game report")
     return 0
 
 
@@ -66,6 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     net = sub.add_parser("netplay", help="run a match against running MCP servers")
     net.add_argument("--seed", type=int, default=None, help="RNG seed for reproducibility")
+    net.add_argument("--email", action="store_true", help="email the JSON report via Gmail")
     net.set_defaults(func=_netplay)
 
     serve = sub.add_parser("serve", help="start an agent MCP server")
