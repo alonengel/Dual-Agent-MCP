@@ -19,6 +19,7 @@ from copthief.domain.scoring import ScoreBook
 from copthief.llm.factory import build_provider
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.match import opponent_position
+from copthief.orchestrator.negotiation import opening_messages
 from copthief.orchestrator.setup import build_subgame, observe
 from copthief.shared.config import Config
 from copthief.shared.logger import AuditLog
@@ -84,8 +85,18 @@ class NetworkMatch:
         outcome = game.outcome or Outcome.TECHNICAL_LOSS
         return self.scorebook.score_subgame(index, outcome, game.move_number)
 
+    async def _negotiate(self) -> None:
+        """Opening free-language handshake; relayed to each server via the note tool."""
+        messages = opening_messages(self.agents[Role.COP], self.agents[Role.THIEF],
+                                    self.config.section("game"))
+        for role, message in messages.items():
+            self.audit.record("negotiation", role=role.value, message=message)
+        await self._call(Role.THIEF, "note", {"message": messages[Role.COP]})
+        await self._call(Role.COP, "note", {"message": messages[Role.THIEF]})
+
     async def run(self, rng) -> dict[str, Any]:
         """Play all subgames against the remote servers and aggregate scores."""
+        await self._negotiate()
         results = [await self._run_subgame(i, rng)
                    for i in range(1, int(self.config.get("game.num_games", 6)) + 1)]
         totals = self.scorebook.totals(results)

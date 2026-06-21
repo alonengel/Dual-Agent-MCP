@@ -13,6 +13,7 @@ from copthief.constants import Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.domain.subgame import Subgame
 from copthief.orchestrator.agent import Agent
+from copthief.orchestrator.negotiation import opening_messages
 from copthief.orchestrator.setup import build_subgame, observe
 from copthief.shared.logger import AuditLog
 
@@ -29,8 +30,16 @@ class MatchRunner:
         self.rng = rng or random.Random()
         self.num_games = int(game_cfg.get("num_games", 6))
 
+    def _negotiate(self) -> None:
+        """Run the opening free-language protocol handshake, recorded to the audit log."""
+        messages = opening_messages(self.agents[Role.COP], self.agents[Role.THIEF],
+                                    self.game_cfg)
+        for role, message in messages.items():
+            self.audit.record("negotiation", role=role.value, message=message)
+
     def run_match(self) -> dict[str, Any]:
         """Play all subgames and return the aggregated, serializable result."""
+        self._negotiate()
         results = []
         for index in range(1, self.num_games + 1):
             results.append(self._run_subgame(index))
