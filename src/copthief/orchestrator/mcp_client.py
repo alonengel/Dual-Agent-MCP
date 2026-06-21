@@ -105,11 +105,21 @@ class NetworkMatch:
         await self._call(Role.THIEF, "note", {"message": messages[Role.COP]})
         await self._call(Role.COP, "note", {"message": messages[Role.THIEF]})
 
+    async def _valid_subgame(self, index: int, rng, max_attempts: int = 3) -> Any:
+        """Play a subgame, re-running technical failures (PDF 9: void & replay)."""
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return await self._run_subgame(index, rng)
+            except Exception as exc:  # noqa: BLE001 - a failed subgame is void; retry it
+                self.audit.record("technical_loss", index=index, attempt=attempt,
+                                  error=str(exc))
+        raise RuntimeError(f"subgame {index} failed after {max_attempts} attempts")
+
     async def run(self, rng) -> dict[str, Any]:
         """Play all subgames against the remote servers and aggregate scores."""
         self.rng = rng
         await self._negotiate()
-        results = [await self._run_subgame(i, rng)
+        results = [await self._valid_subgame(i, rng)
                    for i in range(1, int(self.config.get("game.num_games", 6)) + 1)]
         totals = self.scorebook.totals(results)
         self.audit.record("match_complete_net", totals=totals)

@@ -10,7 +10,7 @@ game:
   diagonal_moves: true   # movement allowed in all 8 directions
   # Partial observation (DecPOMDP, PDF 4.5): an agent only knows the opponent's exact
   # cell within this Chebyshev radius; beyond it, it relies on free-text messages.
-  vision_radius: 2
+  vision_radius: 1       # small radius => partial observation genuinely matters on 5x5
   disclosure: "partial"  # partial = reveal exact cell only when seen; exact = always
   deception: false       # when hidden, the thief may state a false location
 
