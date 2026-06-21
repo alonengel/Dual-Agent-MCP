@@ -16,6 +16,13 @@ within `vision_radius`; otherwise it acts on a (possibly stale) belief. The cop 
 **searches** (heads to the board centre) when it loses the trail and switches to pursuit
 on re-acquisition; the thief exploits being unseen to break contact (and may deceive).
 
+**Negotiating the rules to your advantage (inter-group only):** since the vision radius
+strongly favours one side (wide → cop wins ~100%, radius 1 → thief escapes ~69%), each
+agent *advocates* the radius that helps its role — the **cop requests a wider radius**, the
+**thief a narrower one**. Per the assignment, an enhancement only takes effect if **both
+sides agree**; on conflict the base radius applies (so a savvy thief simply refuses a wider
+radius). In the self-game this is disabled — the base rules are followed exactly.
+
 ## 2. Strategy A — Heuristic (default)
 
 - **Cop:** move to the reachable neighbour minimizing **Chebyshev distance** to the

@@ -96,6 +96,12 @@ disclosure (the thief escapes most subgames) — quantifying the partial-observa
 challenge. Radius 2+ lets the cop re-acquire too easily on 5×5. (`exact` reproduces full
 observability for the deterministic pipeline demo.)
 
+**Negotiating the radius (inter-group):** because the radius strongly favours one side,
+each agent advocates the value helping its role in the opening handshake — the **cop
+requests a wider radius, the thief a narrower one**. An enhancement takes effect only on
+**mutual agreement** (`negotiable: true`); otherwise the base radius applies, so a savvy
+thief refuses the cop's wider request. Disabled in the self-game (base rules only).
+
 ## 5. Free-language communication
 
 There is **no rigid wire protocol**. The match opens with a **negotiation handshake**:
