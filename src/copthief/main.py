@@ -14,11 +14,13 @@ from copthief.constants import Role
 
 
 def _email_report(sdk, path, subject: str) -> None:
-    """Email the saved JSON report via the Gmail API (fails safe if unconfigured)."""
+    """Email the report. PDF section 9: the body must be ONLY the structured JSON."""
+    import json
+
     from copthief.reporting.emailer import send_report_email
 
-    report = path.read_text(encoding="utf-8")
-    send_report_email(sdk.config.get("reporting.email_to", ""), subject, {"report": report})
+    report = json.loads(path.read_text(encoding="utf-8"))
+    send_report_email(sdk.config.get("reporting.email_to", ""), subject, report)
 
 
 def _selfplay(args: argparse.Namespace) -> int:
