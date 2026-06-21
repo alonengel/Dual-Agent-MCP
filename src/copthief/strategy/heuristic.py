@@ -19,20 +19,33 @@ class HeuristicStrategy(Strategy):
             return Move(obs.role, Action.STAY)
 
         if obs.role is Role.COP:
-            best = self._best_for_cop(candidates, opponent)
+            best = self._best_for_cop(candidates, opponent, board)
         else:
-            best = self._best_for_thief(candidates, opponent)
+            best = self._best_for_thief(candidates, opponent, board)
         dx, dy = best.x - here.x, best.y - here.y
         return Move(obs.role, Action.MOVE, dx, dy)
 
     @staticmethod
-    def _best_for_thief(candidates: list[Position], opponent: Position) -> Position:
-        """Choose the reachable cell furthest from the cop."""
-        return max(candidates, key=lambda c: chebyshev(c, opponent))
+    def _best_for_thief(candidates: list[Position], opponent: Position, board: Board) -> Position:
+        """Flee: maximise distance from the cop, tie-broken by staying mobile."""
+        far = max(chebyshev(c, opponent) for c in candidates)
+        best = [c for c in candidates if chebyshev(c, opponent) == far]
+        return max(best, key=lambda c: len(board.free_neighbours(c)))
 
     @staticmethod
-    def _best_for_cop(candidates: list[Position], opponent: Position) -> Position:
-        """Choose the reachable cell closest to the thief (step onto it if adjacent)."""
+    def _best_for_cop(candidates: list[Position], opponent: Position, board: Board) -> Position:
+        """Close in: minimise distance, tie-broken by cutting the thief's escapes.
+
+        When several equidistant steps exist, prefer the one that occupies a cell the
+        thief could flee to, shrinking its mobility and herding it toward the walls.
+        """
         if opponent in candidates:
             return opponent
-        return min(candidates, key=lambda c: chebyshev(c, opponent))
+        near = min(chebyshev(c, opponent) for c in candidates)
+        best = [c for c in candidates if chebyshev(c, opponent) == near]
+        return min(best, key=lambda c: _thief_escapes(opponent, c, board))
+
+
+def _thief_escapes(thief: Position, cop_cell: Position, board: Board) -> int:
+    """Count the thief's free neighbours, excluding the cell the cop would occupy."""
+    return sum(1 for n in board.free_neighbours(thief) if n != cop_cell)

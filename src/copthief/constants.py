@@ -1,6 +1,6 @@
 """Immutable project constants. Tunable game parameters live in config, not here."""
 
-from enum import Enum
+from enum import StrEnum
 
 PACKAGE_ROOT_ENV = "COPTHIEF_ROOT"
 DEFAULT_CONFIG_PATH = "config/config.yaml"
@@ -8,14 +8,14 @@ RATE_LIMITS_PATH = "config/rate_limits.json"
 LOGGING_CONFIG_PATH = "config/logging_config.json"
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     """Which side an agent plays."""
 
     COP = "cop"
     THIEF = "thief"
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     """Atomic action kinds an agent may take on its turn."""
 
     MOVE = "move"
@@ -23,7 +23,7 @@ class Action(str, Enum):
     STAY = "stay"
 
 
-class Outcome(str, Enum):
+class Outcome(StrEnum):
     """Terminal result of a single subgame."""
 
     COP_WIN = "cop_win"
