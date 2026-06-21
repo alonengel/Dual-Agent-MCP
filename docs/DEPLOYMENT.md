@@ -137,7 +137,10 @@ re-run to force a fresh consent.
 
 ## 5. Security checklist before going public
 
-- [ ] `COPTHIEF_MCP_TOKEN` set to a strong value; rotate/revoke when done.
+- [ ] `COPTHIEF_MCP_TOKEN` set to a strong value; the servers enforce it as a
+      transport-level **bearer token** (`Authorization: Bearer <token>`), and the
+      orchestrator sends it automatically. A wrong/absent token returns **401**.
+      Rotate the token to revoke access instantly.
 - [ ] No secrets committed (`.env`, `client_secret.json`, `token.json` are git-ignored).
 - [ ] MCP URLs reachable over HTTPS; non-standard inbound ports avoided where possible.
 - [ ] LLM keys only in environment variables, never in source or config.

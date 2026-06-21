@@ -15,7 +15,8 @@ two AI agents that set up a protocol by themselves and play. Strategy is seconda
 - **Domain engine**: 5×5 (configurable 2×2…N×N) grid, 25-move subgames, 6-subgame match,
   turn-based play (thief first), cop barriers (max 5), full scoring table.
 - **Two MCP servers** (cop + thief) built with FastMCP, exposed over **HTTP even locally**
-  (to prepare for the cloud step), protected by an auth **token** that can be revoked.
+  (to prepare for the cloud step), protected by transport-level **bearer-token** auth
+  (`Authorization: Bearer <token>`) that can be revoked by rotating the token.
 - **LLM abstraction**: `mock` (offline, deterministic — used for tests/CI), `claude`
   (Claude CLI with Anthropic-API fallback), `ollama` (local), and `api`
   (OpenAI / Anthropic / Gemini). All calls go through an API gatekeeper.
