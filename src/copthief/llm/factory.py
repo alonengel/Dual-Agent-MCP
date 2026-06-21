@@ -16,6 +16,10 @@ def build_provider(cfg: dict[str, Any]) -> LLMProvider:
     temperature = float(cfg.get("temperature", 0.4))
     max_tokens = int(cfg.get("max_tokens", 512))
 
+    if provider == "claude":
+        from copthief.llm.claude import ClaudeProvider
+
+        return ClaudeProvider(model, temperature, max_tokens)
     if provider == "ollama":
         from copthief.llm.ollama import OllamaProvider
 
