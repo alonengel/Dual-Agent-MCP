@@ -107,11 +107,17 @@ an offline deterministic `mock` provider used for CI. All calls route through an
 
 ## 7. Strategy (secondary)
 
-- **Heuristic (default):** the cop minimises Chebyshev distance with a *cornering*
-  tie-break that removes the thief's escape routes; the thief maximises distance with a
-  *mobility* tie-break. This reliably captures on a bounded grid.
+- **Adaptive (default):** anticipates the opponent's next cell from its last observed
+  move and targets that — the cop **intercepts** where the thief is heading; the thief
+  **evades** the cop's projected cell — so each agent *changes its play in reaction to
+  the enemy mid-game*. Reuses the cornering/mobility tie-breaks below.
+- **Heuristic:** the cop minimises Chebyshev distance with a *cornering* tie-break that
+  removes the thief's escape routes; the thief maximises distance with a *mobility*
+  tie-break. The cop uses barriers only when *stuck* (need-based, ≤5/subgame).
 - **Tabular Q-learning (optional):** ε-greedy with the Bellman update
   `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards.
+- **Strategy-expert skills:** `.claude/skills/cop-strategist` and `thief-strategist`
+  document the per-role principles and mid-game adaptation cues.
 
 ## 8. Logging, reporting and security
 

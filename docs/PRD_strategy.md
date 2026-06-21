@@ -44,6 +44,25 @@ Q(s,a) ← Q(s,a) + α · [ r + γ · maxₐ′ Q(s′,a′) − Q(s,a) ]
 - **Hyperparameters (config):** `learning_rate=0.1`, `discount_factor=0.9`,
   `epsilon=0.1` — all read from `config/config.yaml`, never hardcoded.
 
+## 3b. Strategy C — Adaptive (default): anticipation + mid-game reaction
+
+The default strategy **adapts to the enemy's responses mid-game**. From the opponent's
+last observed cell it computes a movement direction and **projects the opponent's next
+cell**, then aims at that prediction (reusing the heuristic's cornering/mobility
+tie-breaks and need-based barriers):
+
+- **Cop — interception:** chase where the thief is *heading*, cutting the angle instead
+  of trailing directly; still captures the real thief if it is actually adjacent.
+- **Thief — evasion:** flee from where the cop is *heading*, stepping out of the closing
+  angle rather than only away from the cop's current cell.
+- Belief history resets at each subgame start (`move_number == 0`); predictions are
+  clamped to the board.
+
+Two **strategy-expert skills** (`.claude/skills/cop-strategist`,
+`.claude/skills/thief-strategist`) document the strategic principles and adaptation cues
+(intercept the projection, herd toward walls, break perpendicular when herded, use
+barriers only in a stand-off) for the LLM personas / Claude-Code development.
+
 ## 4. Inputs / Outputs / Performance
 
 | Aspect | Heuristic | Q-table |
