@@ -16,8 +16,9 @@ two AI agents that set up a protocol by themselves and play. Strategy is seconda
   turn-based play (thief first), cop barriers (max 5), full scoring table.
 - **Two MCP servers** (cop + thief) built with FastMCP, exposed over **HTTP even locally**
   (to prepare for the cloud step), protected by an auth **token** that can be revoked.
-- **LLM abstraction**: `mock` (offline, deterministic — used for tests/CI), `ollama`
-  (local), and `api` (OpenAI / Anthropic / Gemini). All calls go through an API gatekeeper.
+- **LLM abstraction**: `mock` (offline, deterministic — used for tests/CI), `claude`
+  (Claude CLI with Anthropic-API fallback), `ollama` (local), and `api`
+  (OpenAI / Anthropic / Gemini). All calls go through an API gatekeeper.
 - **Critical audit logging**: every state transition is written to an append-only
   JSON-lines log — the evidence trail for inter-group dispute resolution.
 - **Reporting**: builds the required internal / bonus **JSON report** and emails it via the
@@ -54,7 +55,7 @@ uv run copthief serve --role thief
 uv run copthief netplay --seed 7
 
 # ...or do steps 3+4 with one command (starts servers, plays, cleans up):
-pwsh -File scripts/run_local_cloud.ps1
+powershell -File scripts/run_local_cloud.ps1
 
 # 5) Run the test suite / analysis notebook:
 uv run pytest --cov
@@ -63,6 +64,19 @@ uv run jupyter lab    # open notebooks/analysis.ipynb
 
 > The networked path requires a shared token: set `COPTHIEF_MCP_TOKEN` to the same
 > value for the servers and the orchestrator (the helper script sets a dev default).
+
+A small task runner wraps the common commands:
+
+```bash
+powershell -File tasks.ps1 setup   # uv sync
+powershell -File tasks.ps1 lint    # ruff check
+powershell -File tasks.ps1 cov     # pytest with coverage
+powershell -File tasks.ps1 selfplay
+powershell -File tasks.ps1 demo    # capture board snapshot + move-by-move filmstrip
+```
+
+To run with **real Claude** (free language via the Claude CLI, Anthropic-API fallback),
+set `COPTHIEF_LLM_PROVIDER=claude` in `.env` (see `.env.example`), then run `selfplay`.
 
 Start small (`grid_size: [2, 2]` in `config/config.yaml`) to "flush the pipeline",
 then scale up to 5×5 — this mirrors the staged sanity-check approach from the assignment.
