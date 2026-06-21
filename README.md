@@ -50,9 +50,19 @@ uv run copthief selfplay --gui
 uv run copthief serve --role cop
 uv run copthief serve --role thief
 
-# 4) Run the test suite:
+# 4) With both servers running, drive a networked match (MCP-over-HTTP):
+uv run copthief netplay --seed 7
+
+# ...or do steps 3+4 with one command (starts servers, plays, cleans up):
+pwsh -File scripts/run_local_cloud.ps1
+
+# 5) Run the test suite / analysis notebook:
 uv run pytest --cov
+uv run jupyter lab    # open notebooks/analysis.ipynb
 ```
+
+> The networked path requires a shared token: set `COPTHIEF_MCP_TOKEN` to the same
+> value for the servers and the orchestrator (the helper script sets a dev default).
 
 Start small (`grid_size: [2, 2]` in `config/config.yaml`) to "flush the pipeline",
 then scale up to 5×5 — this mirrors the staged sanity-check approach from the assignment.
