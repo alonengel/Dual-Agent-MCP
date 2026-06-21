@@ -11,6 +11,7 @@ import os
 from typing import Any
 
 from fastmcp import Client
+from fastmcp.client.auth import BearerAuth
 
 from copthief.constants import Action, Outcome, Role
 from copthief.domain.models import Move
@@ -31,13 +32,13 @@ class NetworkMatch:
         self.scorebook = ScoreBook(config.section("scoring"))
 
     async def _ask(self, url: str, role: Role, obs, message: str) -> dict[str, Any]:
-        """Call a remote agent's play_turn tool and return its action payload."""
-        async with Client(url) as client:
+        """Call a remote agent's play_turn tool (bearer-authed) and return its payload."""
+        auth = BearerAuth(self.token) if self.token else None
+        async with Client(url, auth=auth) as client:
             result = await client.call_tool("play_turn", {
                 "self_x": obs.self_pos.x, "self_y": obs.self_pos.y,
                 "move_number": obs.move_number, "max_moves": obs.max_moves,
                 "barriers_left": obs.barriers_left, "opponent_message": message,
-                "token": self.token,
             })
         return result.data
 
