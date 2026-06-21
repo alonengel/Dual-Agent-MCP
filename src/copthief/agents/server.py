@@ -36,16 +36,29 @@ def build_server(role: Role, config: Config | None = None) -> tuple[FastMCP, dic
     mcp = FastMCP(f"{role.value.capitalize()} Agent", auth=_auth())
 
     @mcp.tool
-    def agree_protocol(grid: list[int], origin: int) -> str:
-        """Return this agent's free-text protocol-agreement message."""
-        return session.agree_protocol(grid, origin)
+    def reset(x: int, y: int, barriers_left: int) -> dict:
+        """Start a new subgame: place this agent and clear its memory."""
+        return session.reset(x, y, barriers_left)
 
     @mcp.tool
-    def play_turn(self_x: int, self_y: int, move_number: int, max_moves: int,
-                  barriers_left: int, opponent_message: str) -> dict:
-        """Decide and return this agent's next action plus a natural-language message."""
-        return session.play_turn(self_x, self_y, move_number, max_moves,
-                                 barriers_left, opponent_message)
+    def observe() -> dict:
+        """Return this agent's partial view of the board."""
+        return session.observe()
+
+    @mcp.tool
+    def move(dx: int, dy: int) -> dict:
+        """Execute a one-step move and return the resulting position + legality."""
+        return session.move(dx, dy)
+
+    @mcp.tool
+    def place_barrier() -> dict:
+        """Cop-only: drop a barrier on the current cell."""
+        return session.place_barrier()
+
+    @mcp.tool
+    def note(message: str) -> dict:
+        """Record an opponent's free-text message for this agent."""
+        return session.note(message)
 
     return mcp, config.section("mcp")
 

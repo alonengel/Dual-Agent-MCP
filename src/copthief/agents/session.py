@@ -1,4 +1,10 @@
-"""Per-agent session state backing an MCP server: belief, strategy and LLM voice."""
+"""Per-agent server state backing the MCP tools.
+
+Per PDF section 5.2, the MCP server holds **no LLM and no strategy** — it only
+exposes pure tools that operate on this agent's local view of the world (its
+position, remaining barriers, and the messages it has been told). All intelligence
+(LLM dialogue + move decisions) lives in the MCP client (the orchestrator).
+"""
 
 from __future__ import annotations
 
@@ -6,39 +12,55 @@ from typing import Any
 
 from copthief.constants import Action, Role
 from copthief.domain.board import Board
-from copthief.domain.models import Observation, Position
-from copthief.llm.factory import build_provider
-from copthief.orchestrator import dialogue
-from copthief.orchestrator.agent import Agent
-from copthief.strategy.factory import build_strategy
+from copthief.domain.models import Move, Position
+from copthief.domain.rules import validate
 
 
 class AgentSession:
-    """Holds one agent's reusable state and turns tool calls into decisions."""
+    """Holds one agent's local state and exposes pure, LLM-free tool operations."""
 
     def __init__(self, role: Role, config: Any):
-        self.role = role
         game = config.section("game")
         width, height = game.get("grid_size", [5, 5])
+        self.role = role
         self.board = Board(width, height, int(game.get("origin", 1)),
                            bool(game.get("diagonal_moves", True)))
-        self.agent = Agent(role, build_strategy(config.section("strategy")),
-                           build_provider(config.section("llm")))
+        self.max_moves = int(game.get("max_moves", 25))
+        self.barriers_left = int(game.get("max_barriers", 5))
+        self.pos = Position(self.board.origin, self.board.origin)
+        self.history: list[str] = []
 
-    def agree_protocol(self, grid: list[int], origin: int) -> str:
-        """Return this agent's protocol-handshake sentence (free text)."""
-        return dialogue.negotiate_setup(self.agent.provider, self.role, grid, origin)
+    def reset(self, x: int, y: int, barriers_left: int) -> dict[str, Any]:
+        """Start a new subgame: place this agent and clear its memory."""
+        self.pos = Position(x, y)
+        self.barriers_left = barriers_left
+        self.history = []
+        return self.observe()
 
-    def play_turn(self, self_x: int, self_y: int, move_number: int, max_moves: int,
-                  barriers_left: int, opponent_message: str = "") -> dict[str, Any]:
-        """Decide an action from the given observation and return action + message."""
-        self.agent.update_belief_from(opponent_message)
-        obs = Observation(self.role, Position(self_x, self_y), move_number, max_moves,
-                          barriers_left, opponent_message)
-        fallback = self.agent.belief or Position(self_x, self_y)
-        move = self.agent.decide(obs, self.board, fallback)
-        new_pos = Position(self_x + move.dx, self_y + move.dy)
-        if move.action is not Action.MOVE:
-            new_pos = Position(self_x, self_y)
-        message = self.agent.voice(obs, move, new_pos)
-        return {"action": move.action.value, "dx": move.dx, "dy": move.dy, "message": message}
+    def observe(self) -> dict[str, Any]:
+        """Return this agent's partial view (its own cell, barriers, recent messages)."""
+        return {"role": self.role.value, "x": self.pos.x, "y": self.pos.y,
+                "barriers_left": self.barriers_left, "history": self.history[-5:]}
+
+    def move(self, dx: int, dy: int) -> dict[str, Any]:
+        """Execute a one-step move on this agent's local state."""
+        result = validate(Move(self.role, Action.MOVE, dx, dy), self.pos,
+                          self.board, self.barriers_left)
+        if result.legal:
+            self.pos = result.new_pos
+        return {"x": self.pos.x, "y": self.pos.y, "legal": result.legal, "reason": result.reason}
+
+    def place_barrier(self) -> dict[str, Any]:
+        """Cop-only: drop a barrier on the current cell (no movement)."""
+        result = validate(Move(self.role, Action.BLOCK), self.pos, self.board,
+                          self.barriers_left)
+        if result.legal:
+            self.board.add_barrier(self.pos)
+            self.barriers_left -= 1
+        return {"legal": result.legal, "reason": result.reason,
+                "barriers_left": self.barriers_left}
+
+    def note(self, message: str) -> dict[str, Any]:
+        """Record what the opponent told us (the agent only knows what it is told)."""
+        self.history.append(message)
+        return {"ok": True, "count": len(self.history)}
