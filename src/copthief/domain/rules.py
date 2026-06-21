@@ -46,6 +46,7 @@ def validate(move: Move, current: Position, board: Board, barriers_left: int) ->
     if not board.in_bounds(target):
         return Validation(False, "target off board", current)
     if board.is_barrier(target):
-        # Entering a barrier means capture/injury per the rules; caller decides.
+        # PDF 4.3: a barrier is impassable for both agents, like a wall or board edge,
+        # so the move is rejected (the actor stays) rather than being committed.
         return Validation(False, "target cell is a barrier", target)
     return Validation(True, "ok", target)
