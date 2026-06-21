@@ -17,10 +17,9 @@ from fastmcp.client.auth import BearerAuth
 from copthief.constants import Action, Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.llm.factory import build_provider
-from copthief.orchestrator import perception
+from copthief.orchestrator import negotiation, perception
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.match import opponent_position
-from copthief.orchestrator.negotiation import opening_messages
 from copthief.orchestrator.setup import build_subgame, observe
 from copthief.shared.config import Config
 from copthief.shared.logger import AuditLog
@@ -40,7 +39,7 @@ class NetworkMatch:
         self.agents = {r: Agent(r, build_strategy(config.section("strategy")),
                                 build_provider(config.section("llm"))) for r in Role}
         game = config.section("game")
-        self.radius = int(game.get("vision_radius", 999))
+        self.radius, self.radius_mode = negotiation.negotiated_radius(game)
         self.exact = str(game.get("disclosure", "exact")).lower() == "exact"
         self.deception = bool(game.get("deception", False))
 
@@ -98,10 +97,12 @@ class NetworkMatch:
 
     async def _negotiate(self) -> None:
         """Opening free-language handshake; relayed to each server via the note tool."""
-        messages = opening_messages(self.agents[Role.COP], self.agents[Role.THIEF],
-                                    self.config.section("game"))
+        messages = negotiation.opening_messages(self.agents[Role.COP],
+                                                self.agents[Role.THIEF],
+                                                self.config.section("game"))
         for role, message in messages.items():
             self.audit.record("negotiation", role=role.value, message=message)
+        self.audit.record("vision_negotiation", radius=self.radius, outcome=self.radius_mode)
         await self._call(Role.THIEF, "note", {"message": messages[Role.COP]})
         await self._call(Role.COP, "note", {"message": messages[Role.THIEF]})
 

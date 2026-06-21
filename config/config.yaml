@@ -10,9 +10,15 @@ game:
   diagonal_moves: true   # movement allowed in all 8 directions
   # Partial observation (DecPOMDP, PDF 4.5): an agent only knows the opponent's exact
   # cell within this Chebyshev radius; beyond it, it relies on free-text messages.
-  vision_radius: 1       # small radius => partial observation genuinely matters on 5x5
+  vision_radius: 1       # base radius => partial observation genuinely matters on 5x5
   disclosure: "partial"  # partial = reveal exact cell only when seen; exact = always
   deception: false       # when hidden, the thief may state a false location
+  # Agent-level rule negotiation (inter-group bonus only; self-game keeps base rules).
+  # Each agent advocates the radius favouring its role; it sticks only if BOTH agree,
+  # else the base radius applies. Cop prefers wider vision, thief prefers narrower.
+  negotiable: false
+  cop_pref_radius: 2
+  thief_pref_radius: 1
 
 scoring:
   cop_win: 20

@@ -38,12 +38,16 @@ def parse_position(text: str) -> Position | None:
     return Position(int(match.group(1)), int(match.group(2)))
 
 
-def negotiate_setup(provider: LLMProvider, role: Role, grid_size: list[int], origin: int) -> str:
-    """Produce an opening protocol-agreement message for the handshake phase."""
+def negotiate_setup(provider: LLMProvider, role: Role, grid_size: list[int], origin: int,
+                    vision_pref: int | None = None) -> str:
+    """Produce an opening protocol message; optionally advocate a preferred vision radius."""
     directive = (
         f"propose playing on a {grid_size[0]}x{grid_size[1]} grid with origin {origin}, "
-        "turn-based with the thief moving first, and confirm you understand the rules"
+        "turn-based with the thief moving first"
     )
+    if vision_pref is not None:
+        directive += f", and request a vision radius of {vision_pref} in your favour"
+    directive += ", and confirm you understand the rules"
     user = f"ROLE: {role.value}\nDIRECTIVE: {directive}\nReply with one sentence."
     return provider.complete(system_for(role), user)
 

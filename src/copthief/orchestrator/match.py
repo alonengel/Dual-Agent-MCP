@@ -12,9 +12,8 @@ from typing import Any
 from copthief.constants import Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.domain.subgame import Subgame
-from copthief.orchestrator import perception
+from copthief.orchestrator import negotiation, perception
 from copthief.orchestrator.agent import Agent
-from copthief.orchestrator.negotiation import opening_messages
 from copthief.orchestrator.setup import build_subgame, observe
 from copthief.shared.logger import AuditLog
 
@@ -30,16 +29,17 @@ class MatchRunner:
         self.audit = audit
         self.rng = rng or random.Random()
         self.num_games = int(game_cfg.get("num_games", 6))
-        self.radius = int(game_cfg.get("vision_radius", 999))
+        self.radius, self.radius_mode = negotiation.negotiated_radius(game_cfg)
         self.exact = str(game_cfg.get("disclosure", "exact")).lower() == "exact"
         self.deception = bool(game_cfg.get("deception", False))
 
     def _negotiate(self) -> None:
         """Run the opening free-language protocol handshake, recorded to the audit log."""
-        messages = opening_messages(self.agents[Role.COP], self.agents[Role.THIEF],
-                                    self.game_cfg)
+        messages = negotiation.opening_messages(self.agents[Role.COP],
+                                                self.agents[Role.THIEF], self.game_cfg)
         for role, message in messages.items():
             self.audit.record("negotiation", role=role.value, message=message)
+        self.audit.record("vision_negotiation", radius=self.radius, outcome=self.radius_mode)
 
     def run_match(self) -> dict[str, Any]:
         """Play all subgames and return the aggregated, serializable result."""
