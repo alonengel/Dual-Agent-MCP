@@ -5,10 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib
+import matplotlib.pyplot as plt
 
-matplotlib.use("Agg")  # headless image rendering
-import matplotlib.pyplot as plt  # noqa: E402
+from copthief.gui.board_draw import draw_board
 
 
 def _turns_for_subgame(audit_path: Path, index: int | None) -> list[dict]:
@@ -21,19 +20,13 @@ def _turns_for_subgame(audit_path: Path, index: int | None) -> list[dict]:
     return [t for t in turns if t["index"] == target]
 
 
-def _draw(ax, turn: dict, span: int, barriers: set[tuple[int, int]]) -> None:
-    """Draw one board frame: grid, barriers, cop and thief markers."""
-    ax.set_xticks(range(1, span + 1))
-    ax.set_yticks(range(1, span + 1))
-    ax.set_xlim(0.5, span + 0.5)
-    ax.set_ylim(0.5, span + 0.5)
-    ax.grid(True)
-    ax.set_aspect("equal")
-    for bx, by in barriers:
-        ax.scatter(bx, by, s=260, c="dimgray", marker="s")
-    ax.scatter(*turn["cop"], s=240, c="tab:blue", marker="s", label="Cop")
-    ax.scatter(*turn["thief"], s=240, c="tab:red", marker="o", label="Thief")
-    ax.set_title(f"move {turn['move']} ({turn['role']})", fontsize=8)
+def _grid(root: Path) -> tuple[int, int, int]:
+    """Read the configured grid width, height and origin (full board, hardest mode)."""
+    from copthief.shared.config import Config
+
+    game = Config.load().section("game")
+    width, height = game.get("grid_size", [5, 5])
+    return int(width), int(height), int(game.get("origin", 1))
 
 
 def render_frames(audit_path: Path, root: Path, index: int | None = None) -> Path | None:
@@ -41,17 +34,18 @@ def render_frames(audit_path: Path, root: Path, index: int | None = None) -> Pat
     turns = _turns_for_subgame(audit_path, index)
     if not turns:
         return None
-    span = max(max(t["cop"][0], t["cop"][1], t["thief"][0], t["thief"][1]) for t in turns)
-    span = max(span, 5)
+    width, height, origin = _grid(root)
 
     cols = 5
     rows = (len(turns) + cols - 1) // cols
-    fig, axes = plt.subplots(rows, cols, figsize=(3 * cols, 3 * rows), squeeze=False)
+    fig, axes = plt.subplots(rows, cols, figsize=(2.6 * cols, 2.6 * rows), squeeze=False)
     barriers: set[tuple[int, int]] = set()
     for n, turn in enumerate(turns):
         if turn.get("action") == "block":
             barriers.add(tuple(turn["cop"]))
-        _draw(axes[n // cols][n % cols], turn, span, barriers)
+        draw_board(axes[n // cols][n % cols], width, height, origin,
+                   tuple(turn["cop"]), tuple(turn["thief"]), barriers,
+                   title=f"move {turn['move']} ({turn['role']})")
     for n in range(len(turns), rows * cols):
         axes[n // cols][n % cols].axis("off")
 

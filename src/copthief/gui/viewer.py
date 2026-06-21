@@ -1,14 +1,13 @@
-"""Render the board state from the audit log into a saved PNG (proof of play)."""
+"""Render the final board state from the audit log into a PNG (proof of play)."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-import matplotlib
+import matplotlib.pyplot as plt
 
-matplotlib.use("Agg")  # headless: write image files without a display server
-import matplotlib.pyplot as plt  # noqa: E402
+from copthief.gui.board_draw import draw_board, legend_handles
 
 
 def _read_turns(audit_path: Path) -> list[dict]:
@@ -19,25 +18,29 @@ def _read_turns(audit_path: Path) -> list[dict]:
     return [e for e in entries if e.get("event") == "turn"]
 
 
+def _grid(root: Path) -> tuple[int, int, int]:
+    """Read the configured grid width, height and origin."""
+    from copthief.shared.config import Config
+
+    game = Config.load().section("game")
+    width, height = game.get("grid_size", [5, 5])
+    return int(width), int(height), int(game.get("origin", 1))
+
+
 def render_audit(audit_path: Path, root: Path, out_name: str = "board.png") -> Path | None:
-    """Draw the final recorded position of cop and thief and save it to assets/."""
+    """Draw the final recorded board (agents inside cells) and save it to assets/."""
     turns = _read_turns(audit_path)
     if not turns:
         return None
     last = turns[-1]
-    cop, thief = tuple(last["cop"]), tuple(last["thief"])
+    sub_turns = [t for t in turns if t["index"] == last["index"]]
+    barriers = [tuple(t["cop"]) for t in sub_turns if t.get("action") == "block"]
+    width, height, origin = _grid(root)
 
-    fig, ax = plt.subplots(figsize=(5, 5))
-    span = max(cop[0], cop[1], thief[0], thief[1], 5) + 1
-    ax.set_xticks(range(span + 1))
-    ax.set_yticks(range(span + 1))
-    ax.grid(True, which="both")
-    ax.set_xlim(0, span)
-    ax.set_ylim(0, span)
-    ax.scatter(*cop, s=400, c="tab:blue", marker="s", label="Cop")
-    ax.scatter(*thief, s=400, c="tab:red", marker="o", label="Thief")
-    ax.set_title(f"CopThief — subgame {last.get('index')} move {last.get('move')}")
-    ax.legend(loc="upper right")
+    fig, ax = plt.subplots(figsize=(5.5, 5.5))
+    draw_board(ax, width, height, origin, tuple(last["cop"]), tuple(last["thief"]),
+               barriers, title=f"CopThief — subgame {last.get('index')} move {last.get('move')}")
+    ax.legend(handles=legend_handles(), loc="upper left", bbox_to_anchor=(1.02, 1))
 
     out_dir = root / "assets"
     out_dir.mkdir(parents=True, exist_ok=True)
