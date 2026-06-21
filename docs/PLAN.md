@@ -38,16 +38,21 @@ gui/          matplotlib board viewer
 6. **Audit log** records the full transition. Repeat until capture / 25 moves.
 
 ### Networked match (cloud / bonus)
-Orchestrator calls each remote server's `play_turn` tool over HTTP (token-authed),
-applies the returned action to the referee, relays the message, logs, aggregates.
+The MCP **client** (orchestrator) owns the LLM. Per turn it builds the observation,
+decides the move (strategy) and verbalises it (LLM), then calls the agent server's
+**pure** tools over HTTP (token-authed) to execute: `reset`, `move`, `place_barrier`,
+`note`, `observe`. The client is the authoritative referee; the servers hold no LLM.
 
 ## 3. Architecture Decision Records (ADRs)
 
 - **ADR-1: SDK facade.** All logic flows through `CopThiefSDK`; GUI/CLI/tests never
   import internals directly. *Trade-off:* slight indirection for clean boundaries.
-- **ADR-2: LLM on the orchestrator + agent voice in the server.** Reconciles the PDF
-  ("LLM in the client") with the lecture ("each agent needs an LLM"): the orchestrator
-  owns dialogue logic; the agent session owns its own provider for verbalisation.
+- **ADR-2: LLM lives only in the MCP client (orchestrator), per PDF section 5.2.**
+  The two MCP servers expose pure tools (`reset`/`observe`/`move`/`place_barrier`/`note`)
+  with no LLM and no strategy; the client runs both agent personas (each with its own
+  LLM context, honouring the lecture's "each agent has an LLM"), decides + verbalises,
+  and calls the tools to execute. *Trade-off:* the client is "heavier", but it exactly
+  matches the formal spec and keeps servers trivially deployable/stateless-ish.
 - **ADR-3: Referee holds authoritative state.** Agents keep only *beliefs* (DecPOMDP);
   the orchestrator validates every action, preventing illegal-move disputes.
 - **ADR-4: HTTP transport even locally.** Prepares for cloud; avoids a stdio→HTTP
@@ -59,9 +64,9 @@ applies the returned action to the referee, relays the message, logs, aggregates
 
 ## 4. Interfaces / Contracts
 
-- **MCP tool `play_turn`** → `{action, dx, dy, message}` given the observation.
-- **MCP tool `agree_protocol`** → free-text handshake sentence.
-- **LLMProvider.complete(system, user) -> str** — the only LLM contract.
+- **MCP tools (pure, per agent server):** `reset(x,y,barriers_left)`, `observe()`,
+  `move(dx,dy)`, `place_barrier()`, `note(message)` — no LLM inside the server.
+- **LLMProvider.complete(system, user) -> str** — the only LLM contract (client side).
 - **Audit line schema** — `{ts, event, ...fields}` JSON per line.
 - **Report JSON** — sections 9.1 (internal) and 9.2 (bonus) of the assignment.
 

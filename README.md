@@ -101,8 +101,8 @@ src/copthief/
   domain/         board, rules, scoring, subgame state machine, models
   strategy/       heuristic + tabular Q-learning decision making
   llm/            provider abstraction (mock/ollama/api)
-  agents/         FastMCP cop & thief servers + tool logic
-  orchestrator/   MCP client + match runner (drives the 6-subgame dialogue)
+  agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF 5.2)
+  orchestrator/   MCP client (owns the LLM) + match runner driving the dialogue
   reporting/      JSON report builder + Gmail emailer
   shared/         config, logging/audit, version, API gatekeeper
   gui/            board viewer

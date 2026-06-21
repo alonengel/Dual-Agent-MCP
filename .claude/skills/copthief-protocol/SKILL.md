@@ -7,10 +7,12 @@ description: >
 
 # CopThief agent protocol
 
-Two autonomous agents — **Cop** and **Thief** — each run as their own MCP server and
-talk through a relay (the orchestrator). There is **no rigid wire protocol**: agents
-coordinate in **free natural language**. A tolerant parser extracts coordinates, so
-every message MUST state the speaker's current cell as `(x,y)`.
+Two autonomous agents — **Cop** and **Thief** — each run as their own MCP server.
+Per PDF section 5.2 the **LLM lives in the MCP client (orchestrator)**, not the servers:
+the servers expose **pure tools** (`reset`, `observe`, `move`, `place_barrier`, `note`)
+and the client runs each agent's LLM persona, decides, verbalises, and calls the tools.
+There is **no rigid wire protocol**: agents coordinate in **free natural language**, and
+every message MUST state the speaker's current cell as `(x,y)` (a tolerant parser reads it).
 
 ## Roles & objective
 - **Cop**: reach the thief's cell (capture). Pursuing, calm tone.
