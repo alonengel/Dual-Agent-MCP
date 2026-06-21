@@ -98,7 +98,9 @@ config/  tests/  results/  logs/  assets/
 ## Documentation
 
 See [`docs/PRD.md`](docs/PRD.md), [`docs/PLAN.md`](docs/PLAN.md),
-[`docs/TODO.md`](docs/TODO.md) and [`docs/PRD_strategy.md`](docs/PRD_strategy.md).
+[`docs/TODO.md`](docs/TODO.md), [`docs/PRD_strategy.md`](docs/PRD_strategy.md),
+[`docs/PROMPTS.md`](docs/PROMPTS.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+(cloud + inter-group bonus setup).
 
 ## Security
 
