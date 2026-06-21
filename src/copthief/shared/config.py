@@ -24,6 +24,18 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
+def load_env(root: Path) -> bool:
+    """Load secrets from <root>/.env into the environment (shell vars take priority).
+
+    Returns True if a .env file was found and applied. Real environment variables are
+    never overridden, so deployment/CI values always win over the local file.
+    """
+    from dotenv import load_dotenv
+
+    env_path = root / ".env"
+    return load_dotenv(env_path, override=False)
+
+
 class Config:
     """Read-only access to merged YAML config with dotted-key lookups."""
 
@@ -35,6 +47,7 @@ class Config:
     def load(cls, path: str | None = None) -> Config:
         """Load config.yaml, validate its version, and return a Config."""
         root = _project_root()
+        load_env(root)
         cfg_path = root / (path or DEFAULT_CONFIG_PATH)
         with cfg_path.open(encoding="utf-8") as handle:
             data = yaml.safe_load(handle)

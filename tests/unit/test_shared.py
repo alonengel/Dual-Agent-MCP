@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
-from copthief.shared.config import Config
+from copthief.shared.config import Config, load_env
 from copthief.shared.gatekeeper import ApiGatekeeper
 from copthief.shared.logger import AuditLog
 from copthief.shared.version import __version__, assert_config_version
@@ -19,6 +21,18 @@ def test_config_loads_game_section() -> None:
 def test_config_missing_key_returns_default() -> None:
     cfg = Config.load()
     assert cfg.get("nope.missing", "fallback") == "fallback"
+
+
+def test_load_env_reads_file_without_overriding_shell(tmp_path, monkeypatch) -> None:
+    (tmp_path / ".env").write_text("COPTHIEF_SAMPLE=from_file\nSHELL_WINS=file\n")
+    monkeypatch.setenv("SHELL_WINS", "shell")  # real env var must take priority
+    assert load_env(tmp_path) is True
+    assert os.environ["COPTHIEF_SAMPLE"] == "from_file"
+    assert os.environ["SHELL_WINS"] == "shell"
+
+
+def test_load_env_missing_file_returns_false(tmp_path) -> None:
+    assert load_env(tmp_path) is False
 
 
 def test_version_check_accepts_matching_minor() -> None:
