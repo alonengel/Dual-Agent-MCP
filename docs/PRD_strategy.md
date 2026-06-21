@@ -14,13 +14,18 @@ barriers, `Aᵢ` = move/block, `R` = the scoring table, `Ωᵢ/O` = partial obse
 ## 2. Strategy A — Heuristic (default)
 
 - **Cop:** move to the reachable neighbour minimizing **Chebyshev distance** to the
-  believed thief cell; step directly onto the thief when adjacent (capture).
+  believed thief cell; step directly onto the thief when adjacent (capture). Among
+  equidistant steps, tie-break by **cornering** — prefer the cell that also removes a
+  thief escape route, herding it toward the walls.
 - **Thief:** move to the reachable neighbour **maximizing** Chebyshev distance from
-  the believed cop cell.
+  the believed cop cell; among equidistant cells, tie-break by **mobility** (most free
+  neighbours) to avoid self-trapping in corners.
 - **Inputs:** observation (own cell, move number, barriers left), believed opponent
   cell (parsed from dialogue; exact in self-play). **Output:** a one-step `Move`.
-- **Rationale:** deterministic, debuggable, zero-cost, sufficient to demonstrate a
-  working pipeline. **Limitation:** no lookahead; thief usually escapes on open 5×5.
+- **Rationale:** deterministic, debuggable, zero-cost. The cornering tie-break makes
+  the cop a competent pursuer that reliably captures on a bounded grid; the metric of
+  interest becomes *moves-to-capture* (see the analysis notebook), which grows with
+  board size. **Limitation:** still one-step greedy with no multi-turn planning.
 
 ## 3. Strategy B — Tabular Q-learning (optional)
 
