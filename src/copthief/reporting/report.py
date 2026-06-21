@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from copthief.domain.scoring import ScoreBook
+
 
 def build_internal_report(team: dict[str, Any], mcp: dict[str, Any],
                           match: dict[str, Any]) -> dict[str, Any]:
@@ -23,13 +25,25 @@ def build_internal_report(team: dict[str, Any], mcp: dict[str, Any],
     }
 
 
+def _bonus_claim(names: list[str], totals: dict[str, int],
+                 bonus: dict[str, int]) -> dict[str, int]:
+    """Map each team's head-to-head total to its claimed bonus points (10/7/5)."""
+    if len(names) != 2 or not all(n in totals for n in names):
+        return {}
+    a, b = names
+    return {a: ScoreBook.bonus_points(totals[a], totals[b], bonus),
+            b: ScoreBook.bonus_points(totals[b], totals[a], bonus)}
+
+
 def build_bonus_report(group_1: dict[str, Any], group_2: dict[str, Any],
-                       match: dict[str, Any], agreement: bool = True) -> dict[str, Any]:
+                       match: dict[str, Any], agreement: bool = True,
+                       bonus: dict[str, int] | None = None) -> dict[str, Any]:
     """Assemble the inter-group bonus report JSON (two teams, mutual agreement)."""
     totals = match.get("totals_by_group", {})
+    names = [group_1.get("group_name"), group_2.get("group_name")]
     return {
         "report_type": "bonus_game",
-        "groups": {"group_1": group_1.get("group_name"), "group_2": group_2.get("group_name")},
+        "groups": {"group_1": names[0], "group_2": names[1]},
         "github_repo_group_1": group_1.get("github_repo", ""),
         "github_repo_group_2": group_2.get("github_repo", ""),
         "mcp_url_group_1_cop": group_1.get("cop_url", ""),
@@ -37,8 +51,11 @@ def build_bonus_report(group_1: dict[str, Any], group_2: dict[str, Any],
         "mcp_url_group_2_cop": group_2.get("cop_url", ""),
         "mcp_url_group_2_thief": group_2.get("thief_url", ""),
         "timezone": "Asia/Jerusalem",
+        "students_group_1": group_1.get("students", []),
+        "students_group_2": group_2.get("students", []),
         "sub_games": match.get("sub_games", []),
         "totals_by_group": totals,
+        "bonus_claim": _bonus_claim(names, totals, bonus or {"win": 10, "lose": 7, "tie": 5}),
         "mutual_agreement": agreement,
     }
 

@@ -23,13 +23,19 @@ def test_build_internal_report_shape() -> None:
 
 
 def test_build_bonus_report_shape() -> None:
-    g1 = {"group_name": "A", "github_repo": "ga", "cop_url": "ac", "thief_url": "at"}
-    g2 = {"group_name": "B", "github_repo": "gb", "cop_url": "bc", "thief_url": "bt"}
+    g1 = {"group_name": "A", "github_repo": "ga", "cop_url": "ac", "thief_url": "at",
+          "students": ["a1"]}
+    g2 = {"group_name": "B", "github_repo": "gb", "cop_url": "bc", "thief_url": "bt",
+          "students": ["b1"]}
     match = {"sub_games": [], "totals_by_group": {"A": 60, "B": 80}}
     report = build_bonus_report(g1, g2, match, agreement=True)
     assert report["report_type"] == "bonus_game"
     assert report["groups"]["group_2"] == "B"
     assert report["mutual_agreement"] is True
+    assert report["students_group_1"] == ["a1"]
+    assert report["students_group_2"] == ["b1"]
+    # B has the higher total -> wins (10); A lower -> 7 (PDF section 12.2)
+    assert report["bonus_claim"] == {"A": 7, "B": 10}
 
 
 def test_save_report_writes_json(tmp_path) -> None:
