@@ -11,6 +11,19 @@ from copthief.domain.models import Position
 from copthief.llm.mock import MockProvider
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force the offline mock provider and blank cloud keys so tests never call out.
+
+    A developer's local .env (loaded by Config.load) must not make the suite hit a
+    real LLM. Tests that exercise specific providers override these explicitly.
+    """
+    monkeypatch.setenv("COPTHIEF_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+
+
 @pytest.fixture
 def board() -> Board:
     """A 5x5 board with origin 1 and diagonal movement enabled."""
