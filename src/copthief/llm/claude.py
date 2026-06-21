@@ -1,8 +1,9 @@
-"""Claude provider: Claude CLI first (free with a subscription), Anthropic API fallback.
+"""Claude provider: Claude CLI first (free subscription), Anthropic API fallback.
 
-Mirrors the approach used in the team's prior projects. The CLI is preferred because
-it needs no API key; if the CLI is absent (e.g. CI) we fall back to the Anthropic API
-using ANTHROPIC_API_KEY. Both paths satisfy the free-natural-language requirement.
+The CLI path strips ANTHROPIC_API_KEY from its environment so Claude Code uses your
+subscription (OAuth) rather than billing the API. If the CLI is missing or fails, we
+fall back to the Anthropic HTTP API using ANTHROPIC_API_KEY. Both paths satisfy the
+free-natural-language requirement; only the fallback consumes API credits.
 """
 
 from __future__ import annotations
@@ -11,12 +12,14 @@ import logging
 import os
 import shutil
 import subprocess
-import tempfile
 
 from copthief.llm.base import LLMProvider
 
 _log = logging.getLogger("copthief.llm.claude")
-_DEFAULT_API_MODEL = "claude-sonnet-4-20250514"
+# Default to the strongest available model; messages are short so cost stays low.
+_DEFAULT_API_MODEL = "claude-opus-4-8"
+_DEFAULT_CLI_MODEL = "opus"  # CLI alias for the latest Opus
+_ALIASES = {"opus", "sonnet", "haiku"}
 
 
 class ClaudeProvider(LLMProvider):
@@ -26,7 +29,8 @@ class ClaudeProvider(LLMProvider):
                  max_tokens: int = 512, timeout: int = 120):
         super().__init__(model, temperature, max_tokens)
         self.timeout = timeout
-        self._cli = shutil.which(os.environ.get("CLAUDE_CLI_PATH", "claude"))
+        # An empty CLAUDE_CLI_PATH (e.g. blank in .env) must fall back to "claude".
+        self._cli = shutil.which(os.environ.get("CLAUDE_CLI_PATH") or "claude")
 
     def complete(self, system: str, user: str) -> str:
         """Return Claude's reply, preferring the CLI and falling back to the API."""
@@ -37,20 +41,21 @@ class ClaudeProvider(LLMProvider):
                 _log.warning("Claude CLI failed (%s); trying API", exc)
         return self._via_api(system, user)
 
+    def _cli_model(self) -> str:
+        """Resolve a Claude model/alias for the CLI (defaults to latest Opus)."""
+        return self.model if (self.model.startswith("claude") or self.model in _ALIASES) \
+            else _DEFAULT_CLI_MODEL
+
     def _via_cli(self, system: str, user: str) -> str:
-        """One-shot CLI call; system prompt via temp file, user via stdin (Windows-safe)."""
-        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False,
-                                         encoding="utf-8") as handle:
-            handle.write(system)
-            sys_path = handle.name
-        cmd = [self._cli, "--print", "--system-prompt-file", sys_path,
-               "--output-format", "text"]
-        try:
-            result = subprocess.run(cmd, input=user, capture_output=True, text=True,
-                                    encoding="utf-8", errors="replace",
-                                    timeout=self.timeout, check=False)
-        finally:
-            os.unlink(sys_path)
+        """One-shot CLI call. The combined prompt goes via stdin (no unsupported flags),
+        and ANTHROPIC_API_KEY is removed from the child env so Claude Code uses the
+        free subscription auth instead of billing the API.
+        """
+        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+        cmd = [self._cli, "--print", "--output-format", "text", "--model", self._cli_model()]
+        result = subprocess.run(cmd, input=f"{system}\n\n{user}", capture_output=True,
+                                text=True, encoding="utf-8", errors="replace",
+                                timeout=self.timeout, check=False, env=env)
         if result.returncode != 0:
             raise RuntimeError(result.stderr or "Claude CLI failed")
         return result.stdout.strip()
