@@ -86,20 +86,32 @@ public URLs instead of `127.0.0.1`.
 ## 3. Gmail API for the report email
 
 The cop agent emails the JSON report at the end of 6 subgames (token-based OAuth,
-preferred over username/password).
+preferred over username/password). This follows the course Gmail-API guide exactly:
 
-1. In the Google Cloud Console, create a project and enable the **Gmail API**.
-2. Create **OAuth client credentials** (Desktop app); download `client_secret.json`
-   into the project root (git-ignored). Optionally use a dedicated Gmail account.
-3. First run opens a browser consent screen and writes `token.json` (also git-ignored).
-4. Send:
+1. In the **Google Cloud Console**, select/create one project for the whole flow.
+2. **APIs & Services → Library**: enable the **Gmail API** (the guide also enables the
+   Calendar API; only Gmail is required here).
+3. **Google Auth Platform** (separate from API enablement):
+   - **Audience** → choose **External** (enables Testing mode with a Test-users list).
+   - **Audience → Test users** → add the Gmail address you will send from.
+   - **Data access → Add scopes** → add `https://www.googleapis.com/auth/gmail.modify`.
+4. **Clients → Create OAuth client → Application type: Desktop**. Download the JSON and
+   save it as **`credentials.json`** in the project root (git-ignored).
+5. First send opens a browser consent screen and writes **`token.json`** (git-ignored).
+   This matches the emailer's defaults (`GMAIL_CLIENT_SECRET_FILE=credentials.json`,
+   scope `gmail.modify`).
+6. Send:
 
 ```bash
-uv run copthief selfplay --email      # or wire netplay to email similarly
+uv run copthief selfplay --email
 ```
 
 If credentials are missing the emailer logs a warning and the report is still saved
 to `results/` — it never crashes the run.
+
+**Troubleshooting:** "Access blocked / app isn't verified" is normal in Testing mode as
+long as your account is in Test users. If you changed scopes, delete `token.json` and
+re-run to force a fresh consent.
 
 ---
 

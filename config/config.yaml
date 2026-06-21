@@ -35,8 +35,10 @@ mcp:
   thief_port: 8182
 
 llm:
-  provider: "mock"           # mock | ollama | api (overridable via COPTHIEF_LLM_PROVIDER)
-  model: "llama3.2"
+  # mock (offline default) | claude (CLI+Anthropic fallback) | ollama | api.
+  # Overridable via COPTHIEF_LLM_PROVIDER; set it to "claude" in .env for real runs.
+  provider: "mock"
+  model: "llama3.2"          # ollama model; Claude uses its own default if non-claude
   api_kind: "openai"         # openai | anthropic | gemini (when provider=api)
   temperature: 0.4
   max_tokens: 512
