@@ -17,12 +17,15 @@ from copthief.llm.prompts import system_for
 _COORD = re.compile(r"\(?\s*(\d+)\s*[,; ]\s*(\d+)\s*\)?")
 
 
-def announce(provider: LLMProvider, obs: Observation, move: Move, new_pos: Position) -> str:
-    """Ask the LLM to phrase the agent's move + resulting position as free text."""
-    directive = (
-        f"{move.describe()} and you are now at cell ({new_pos.x},{new_pos.y}); "
-        f"this is move {obs.move_number + 1} of {obs.max_moves}"
-    )
+def announce(provider: LLMProvider, obs: Observation, move: Move,
+             disclosed: Position | None) -> str:
+    """Phrase the move as free text. ``disclosed`` is the cell to reveal (the true cell,
+    a decoy when deceiving, or ``None`` to keep the exact location hidden)."""
+    progress = f"this is move {obs.move_number + 1} of {obs.max_moves}"
+    if disclosed is not None:
+        directive = f"{move.describe()} and you are now at cell ({disclosed.x},{disclosed.y}); {progress}"
+    else:
+        directive = f"{move.describe()} while keeping your exact position hidden; {progress}"
     user = f"ROLE: {obs.role.value}\nDIRECTIVE: {directive}\nReply with one sentence."
     return provider.complete(system_for(obs.role), user)
 

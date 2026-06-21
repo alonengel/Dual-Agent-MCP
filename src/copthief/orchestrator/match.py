@@ -12,6 +12,7 @@ from typing import Any
 from copthief.constants import Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.domain.subgame import Subgame
+from copthief.orchestrator import perception
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.negotiation import opening_messages
 from copthief.orchestrator.setup import build_subgame, observe
@@ -29,6 +30,9 @@ class MatchRunner:
         self.audit = audit
         self.rng = rng or random.Random()
         self.num_games = int(game_cfg.get("num_games", 6))
+        self.radius = int(game_cfg.get("vision_radius", 999))
+        self.exact = str(game_cfg.get("disclosure", "exact")).lower() == "exact"
+        self.deception = bool(game_cfg.get("deception", False))
 
     def _negotiate(self) -> None:
         """Run the opening free-language protocol handshake, recorded to the audit log."""
@@ -61,20 +65,27 @@ class MatchRunner:
         return result
 
     def _play_turn(self, game: Subgame, index: int, last_message: str) -> str:
-        """Execute one agent's turn: decide, announce, apply, log, relay."""
+        """Execute one agent's turn under partial observation: perceive, decide, disclose."""
         role = game.turn
         agent = self.agents[role]
         opponent = self.agents[Role.THIEF if role is Role.COP else Role.COP]
-        obs = observe(game, role, last_message)
+        opp_true = opponent_position(game, role)
 
-        move = agent.decide(obs, game.board, fallback_opponent=opponent_position(game, role))
+        visible = agent.perceive(game.position_of(role), opp_true, self.radius)
+        obs = observe(game, role, last_message)
+        target = agent.belief or perception.center(game.board)
+        move = agent.decide(obs, game.board, fallback_opponent=target)
         result = game.apply(move)
-        message = agent.voice(obs, move, result.new_pos)
-        opponent.update_belief_from(message)
+
+        disclosed = perception.disclosed_cell(result.new_pos, opp_true, self.radius,
+                                              self.exact, self.deception, game.board, self.rng)
+        message = agent.voice(obs, move, disclosed)
+        perception.relay(opponent, result.new_pos, opp_true, self.radius, message)
 
         self.audit.record(
             "turn", index=index, move=game.move_number, role=role.value,
             action=move.action.value, legal=result.legal, reason=result.reason,
+            visible=visible, revealed=disclosed is not None,
             cop=game.cop.as_tuple(), thief=game.thief.as_tuple(), message=message,
         )
         return message

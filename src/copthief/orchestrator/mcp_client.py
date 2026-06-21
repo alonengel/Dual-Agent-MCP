@@ -17,6 +17,7 @@ from fastmcp.client.auth import BearerAuth
 from copthief.constants import Action, Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.llm.factory import build_provider
+from copthief.orchestrator import perception
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.match import opponent_position
 from copthief.orchestrator.negotiation import opening_messages
@@ -38,6 +39,10 @@ class NetworkMatch:
         self.urls = {Role.COP: self.mcp.get("cop_url"), Role.THIEF: self.mcp.get("thief_url")}
         self.agents = {r: Agent(r, build_strategy(config.section("strategy")),
                                 build_provider(config.section("llm"))) for r in Role}
+        game = config.section("game")
+        self.radius = int(game.get("vision_radius", 999))
+        self.exact = str(game.get("disclosure", "exact")).lower() == "exact"
+        self.deception = bool(game.get("deception", False))
 
     async def _call(self, role: Role, tool: str, args: dict[str, Any]) -> Any:
         """Invoke a tool on the given agent's MCP server (bearer-authed)."""
@@ -54,17 +59,23 @@ class NetworkMatch:
             await self._call(role, "move", {"dx": move.dx, "dy": move.dy})
 
     async def _turn(self, game, index: int, message: str) -> str:
-        """One turn: decide (client LLM/strategy), execute via tools, relay message."""
+        """One turn under partial observation: perceive, decide, execute via tools, relay."""
         role = game.turn
         agent = self.agents[role]
         opponent = self.agents[Role.THIEF if role is Role.COP else Role.COP]
-        agent.update_belief_from(message)
+        opp_true = opponent_position(game, role)
+
+        agent.perceive(game.position_of(role), opp_true, self.radius)
         obs = observe(game, role, message)
-        move = agent.decide(obs, game.board, fallback_opponent=opponent_position(game, role))
+        target = agent.belief or perception.center(game.board)
+        move = agent.decide(obs, game.board, fallback_opponent=target)
         result = game.apply(move)               # client is the authoritative referee
         await self._execute(role, move)         # server executes the same action
-        msg = agent.voice(obs, move, result.new_pos)
-        opponent.update_belief_from(msg)
+
+        disclosed = perception.disclosed_cell(result.new_pos, opp_true, self.radius,
+                                              self.exact, self.deception, game.board, self.rng)
+        msg = agent.voice(obs, move, disclosed)
+        perception.relay(opponent, result.new_pos, opp_true, self.radius, msg)
         await self._call(Role.THIEF if role is Role.COP else Role.COP, "note",
                          {"message": msg})
         self.audit.record("turn_net", index=index, role=role.value,
@@ -96,6 +107,7 @@ class NetworkMatch:
 
     async def run(self, rng) -> dict[str, Any]:
         """Play all subgames against the remote servers and aggregate scores."""
+        self.rng = rng
         await self._negotiate()
         results = [await self._run_subgame(i, rng)
                    for i in range(1, int(self.config.get("game.num_games", 6)) + 1)]
