@@ -90,8 +90,11 @@ under `disclosure: partial` an agent **hides its exact cell when unseen** (it st
 move but no coordinates), so the opponent's belief goes stale and it must search and
 re-acquire; once within the radius, positions are confirmed (ground truth). Optional
 `deception: true` lets a hidden thief state a *false* cell — survivable only because
-proximity restores ground truth. On a small 5×5 with radius 2 the cop re-acquires quickly;
-the effect grows on larger boards. (`exact` reproduces full observability.)
+proximity restores ground truth. **This visibly changes outcomes:** measured cop-win rate
+on 5×5 is 1.00 under full observability but **~0.31 with `vision_radius: 1` + partial**
+disclosure (the thief escapes most subgames) — quantifying the partial-observation
+challenge. Radius 2+ lets the cop re-acquire too easily on 5×5. (`exact` reproduces full
+observability for the deterministic pipeline demo.)
 
 ## 5. Free-language communication
 
