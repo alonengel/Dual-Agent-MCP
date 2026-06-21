@@ -38,7 +38,7 @@ class Move:
             return f"{self.role.value} places a barrier"
         if self.action is Action.STAY:
             return f"{self.role.value} stays in place"
-        return f"{self.role.value} moves by ({self.dx},{self.dy})"
+        return f"{self.role.value} steps dx={self.dx} dy={self.dy}"
 
 
 @dataclass
