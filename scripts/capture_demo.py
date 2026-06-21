@@ -45,6 +45,8 @@ def main() -> int:
     args = parser.parse_args()
 
     sdk = CopThiefSDK(seed=args.seed)
+    # Start from a clean audit log so the transcript/filmstrip reflect only this run.
+    sdk.audit.path.write_text("", encoding="utf-8")
     match = sdk.run_self_play()
     sdk.report_and_save(match)
 
