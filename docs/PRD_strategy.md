@@ -11,6 +11,11 @@ teams pursuing the competitive bonus.
 Formal model: `⟨ n, S, {Aᵢ}, P, R, {Ωᵢ}, O, γ ⟩` where `n=2`, `S` = positions +
 barriers, `Aᵢ` = move/block, `R` = the scoring table, `Ωᵢ/O` = partial observation.
 
+**Partial observation matters to strategy:** an agent only sees the opponent's exact cell
+within `vision_radius`; otherwise it acts on a (possibly stale) belief. The cop therefore
+**searches** (heads to the board centre) when it loses the trail and switches to pursuit
+on re-acquisition; the thief exploits being unseen to break contact (and may deceive).
+
 ## 2. Strategy A — Heuristic (default)
 
 - **Cop:** move to the reachable neighbour minimizing **Chebyshev distance** to the

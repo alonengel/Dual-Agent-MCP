@@ -28,8 +28,9 @@ The pursuit is a **Decentralized, Partially Observable Markov Decision Process**
   place a barrier on its current cell.
 - **P** — deterministic transition (a legal move updates a single position).
 - **R** — the reward/score table (Section 4).
-- **{Ωᵢ}, O** — partial observation: each agent observes only its own cell and what the
-  opponent tells it in free language; opponent position is *inferred* from messages.
+- **{Ωᵢ}, O** — partial observation: each agent observes the opponent's exact cell only
+  within a `vision_radius`; beyond it, position is *inferred* from (possibly hidden or
+  deceptive) free-language messages (see §4a).
 - **γ** — discount factor (used by the optional Q-learning strategy).
 
 ## 3. Game rules, grid and scoring
@@ -79,6 +80,18 @@ tabular Q-learning) · `llm/` (provider abstraction) · `agents/` (FastMCP serve
 pure-tool session) · `orchestrator/` (dialogue, negotiation, match runner, MCP client) ·
 `reporting/` (JSON + Gmail) · `shared/` (config, audit logger, gatekeeper, version) ·
 `gui/` · `sdk/`.
+
+## 4a. Partial observation (vision radius)
+
+Faithful to the DecPOMDP framing and PDF §4.5 ("observation ambiguity; initial distance
+exceeds the **vision radius**"), an agent knows the opponent's exact cell **only within a
+configurable Chebyshev `vision_radius`**. Beyond it, agents rely on free-text messages:
+under `disclosure: partial` an agent **hides its exact cell when unseen** (it states a
+move but no coordinates), so the opponent's belief goes stale and it must search and
+re-acquire; once within the radius, positions are confirmed (ground truth). Optional
+`deception: true` lets a hidden thief state a *false* cell — survivable only because
+proximity restores ground truth. On a small 5×5 with radius 2 the cop re-acquires quickly;
+the effect grows on larger boards. (`exact` reproduces full observability.)
 
 ## 5. Free-language communication
 
