@@ -1,0 +1,8 @@
+# Copy to project-root ngrok.yml (git-ignored) and replace YOUR_AUTHTOKEN.
+# Or run: ngrok config add-authtoken <token>  (token stored globally; file optional)
+version: "2"
+authtoken: YOUR_AUTHTOKEN
+tunnels:
+  copthief:
+    proto: http
+    addr: 8080   # requires: uv run copthief serve-combined
