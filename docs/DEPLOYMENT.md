@@ -73,6 +73,15 @@ cloudflared tunnel --url http://localhost:8080 # terminal 2 -> prints https URL
 
 Or one command: `powershell -File tasks.ps1 cloud`
 
+**Fully automated (verified):** `powershell -File tasks.ps1 cloudplay` starts the
+combined server, opens a quick tunnel, captures the public URL, runs a full 6-subgame
+`netplay` through it, and tears everything down — a one-command Level-2 proof.
+
+> **Windows PATH note:** winget often installs to `C:\Program Files (x86)\cloudflared\`
+> without adding it to PATH. `tasks.ps1 cloud` finds that location automatically; for
+> manual use either restart the terminal after install or run the full path to
+> `cloudflared.exe`.
+
 Then set in `config/config.yaml`:
 ```yaml
 mcp:
