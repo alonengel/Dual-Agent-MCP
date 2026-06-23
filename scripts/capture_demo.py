@@ -11,9 +11,11 @@ Usage:  uv run python scripts/capture_demo.py [--seed N]
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 from pathlib import Path
 
+from copthief.gui.live import render_live
 from copthief.gui.sequence import render_frames
 from copthief.gui.viewer import render_audit
 from copthief.sdk import CopThiefSDK
@@ -47,12 +49,17 @@ def main() -> int:
     """Run a seeded self-game and render the snapshot + filmstrip artifacts."""
     parser = argparse.ArgumentParser(description="Capture CopThief demo screenshots")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--games", type=int, default=None,
+                        help="override subgame count (e.g. 2 for a short demo)")
+    parser.add_argument("--quiet", action="store_true", help="suppress live dialogue output")
     args = parser.parse_args()
 
     sdk = CopThiefSDK(seed=args.seed)
     # Start from a clean audit log so the transcript/filmstrip reflect only this run.
     sdk.audit.path.write_text("", encoding="utf-8")
-    match = sdk.run_self_play()
+    reporter = None if args.quiet else functools.partial(print, flush=True)
+    board = None if args.quiet else render_live
+    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
     sdk.report_and_save(match)
 
     root = sdk.config.root

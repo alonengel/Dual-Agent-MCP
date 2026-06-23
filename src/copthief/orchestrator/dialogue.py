@@ -23,10 +23,12 @@ def announce(provider: LLMProvider, obs: Observation, move: Move,
     a decoy when deceiving, or ``None`` to keep the exact location hidden)."""
     progress = f"this is move {obs.move_number + 1} of {obs.max_moves}"
     if disclosed is not None:
-        directive = f"{move.describe()} and you are now at cell ({disclosed.x},{disclosed.y}); {progress}"
+        directive = (f"{move.describe()} and state plainly that you are now at "
+                     f"cell ({disclosed.x},{disclosed.y}); {progress}")
     else:
-        directive = f"{move.describe()} while keeping your exact position hidden; {progress}"
-    user = f"ROLE: {obs.role.value}\nDIRECTIVE: {directive}\nReply with one sentence."
+        directive = (f"{move.describe()} but do not reveal your coordinates — give only a "
+                     f"vague direction or a taunt; {progress}")
+    user = f"ROLE: {obs.role.value}\nDIRECTIVE: {directive}\nReply with one sentence, in character."
     return provider.complete(system_for(obs.role), user)
 
 
