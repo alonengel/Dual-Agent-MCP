@@ -48,15 +48,22 @@ uv run copthief selfplay
 # 2) Same, rendering the GUI board:
 uv run copthief selfplay --gui
 
-# 3) Start the two MCP servers over HTTP (separate terminals):
+# 3a) Local networked play — two MCP servers (separate terminals):
 uv run copthief serve --role cop
 uv run copthief serve --role thief
 
-# 4) With both servers running, drive a networked match (MCP-over-HTTP):
+# 3b) Public / inter-group play — one combined server (recommended for tunnels):
+uv run copthief serve-combined   # /cop/mcp and /thief/mcp on :8080
+
+# 4) With servers running, drive a networked match (MCP-over-HTTP):
 uv run copthief netplay --seed 7
 
-# ...or do steps 3+4 with one command (starts servers, plays, cleans up):
+# ...or do steps 3a+4 with one command (starts two local servers, plays, cleans up):
 powershell -File scripts/run_local_cloud.ps1
+
+# For a free public URL (verified): serve-combined + Cloudflare quick tunnel
+#   powershell -File tasks.ps1 cloud
+# Then point mcp.cop_url / mcp.thief_url at …/cop/mcp and …/thief/mcp — see docs/DEPLOYMENT.md
 
 # 5) Run the test suite / analysis notebook:
 uv run pytest --cov
@@ -69,11 +76,13 @@ uv run jupyter lab    # open notebooks/analysis.ipynb
 A small task runner wraps the common commands:
 
 ```bash
-powershell -File tasks.ps1 setup   # uv sync
-powershell -File tasks.ps1 lint    # ruff check
-powershell -File tasks.ps1 cov     # pytest with coverage
+powershell -File tasks.ps1 setup          # uv sync
+powershell -File tasks.ps1 lint           # ruff check
+powershell -File tasks.ps1 cov            # pytest with coverage
 powershell -File tasks.ps1 selfplay
-powershell -File tasks.ps1 demo    # capture board snapshot + move-by-move filmstrip
+powershell -File tasks.ps1 demo           # board snapshot + move-by-move filmstrip
+powershell -File tasks.ps1 serve-combined # both agents on :8080 (tunnel-friendly)
+powershell -File tasks.ps1 cloud          # serve-combined + Cloudflare quick tunnel
 ```
 
 To run with **real Claude** (free language via the Claude CLI, Anthropic-API fallback),
@@ -115,8 +124,9 @@ config/  tests/  results/  logs/  assets/
 See [`docs/REPORT.md`](docs/REPORT.md) (the consolidated scientific write-up),
 [`docs/PRD.md`](docs/PRD.md), [`docs/PLAN.md`](docs/PLAN.md),
 [`docs/TODO.md`](docs/TODO.md), [`docs/PRD_strategy.md`](docs/PRD_strategy.md),
-[`docs/PROMPTS.md`](docs/PROMPTS.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
-(cloud + inter-group bonus setup).
+[`docs/PROMPTS.md`](docs/PROMPTS.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+(cloud + inter-group bonus setup), and [`docs/archive/`](docs/archive/)
+(archived ngrok notes — superseded by Cloudflare quick tunnel).
 
 ## Security
 
