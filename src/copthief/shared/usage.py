@@ -11,13 +11,19 @@ from dataclasses import dataclass, field
 
 # Rough chars-per-token ratio; accurate enough for cost estimation across vendors.
 _CHARS_PER_TOKEN = 4
-# Default USD price per 1M tokens as (input, output). Overridable via config.
+# Default USD price per 1M tokens as (input, output); overridable via config.
 # Keyed by the model name providers record (Claude resolves its alias to "opus").
+# Sources: claude.com/pricing and ai.google.dev/gemini-api/docs/pricing (standard tier,
+# Gemini ≤200k-token prompts). Verified 2026-06.
 _PRICING: dict[str, tuple[float, float]] = {
-    "opus": (15.0, 75.0),
-    "claude-opus-4-8": (15.0, 75.0),
-    "sonnet": (3.0, 15.0),
-    "gpt-4o": (2.5, 10.0),
+    "opus": (5.0, 25.0),                  # Claude Opus 4.8 (our default; CLI alias)
+    "claude-opus-4-8": (5.0, 25.0),
+    "sonnet": (3.0, 15.0),                # Claude Sonnet 4.6
+    "haiku": (1.0, 5.0),                  # Claude Haiku 4.5
+    "gpt-4o": (2.5, 10.0),                # OpenAI GPT-4o
+    "gemini-2.5-pro": (1.25, 10.0),       # Google Gemini 2.5 Pro
+    "gemini-2.5-flash": (0.30, 2.50),     # Google Gemini 2.5 Flash
+    "gemini-2.5-flash-lite": (0.10, 0.40),
     "default": (0.0, 0.0),
 }
 

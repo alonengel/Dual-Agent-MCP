@@ -183,8 +183,10 @@ price table. After each game a `results/usage_<ts>.json` is written with the per
 breakdown and totals. `est_usd` prices tokens at **API rates**, so it is the actual cost
 when the Anthropic-API path is used and the **API-equivalent** cost (i.e. the amount saved)
 when the free Claude-CLI subscription serves the call. Because messages are short (one–two
-sentences) token use is minimal: a full 6-subgame Opus game is only a few cents on the API
-and **free** on the CLI subscription — and the meter reports the exact figure per run.
+sentences) token use is minimal: at the current Opus 4.8 rate ($5/$25 per 1M in/out) one
+subgame is **≈ $0.08** and a full 6-subgame game is **well under $1** on the API — and
+**free** on the CLI subscription. The meter reports the exact figure per run in
+`results/usage_<ts>.json`.
 
 ## 11. Quality & engineering
 
