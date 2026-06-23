@@ -25,6 +25,11 @@ of moving. You only know the thief's position from what it tells you in free lan
 - If the **distance has stalled** for several turns (you cannot get closer), you are in a
   stand-off: **place a barrier** to shrink the reachable region, then resume the chase.
 - If the thief **reverses direction** to bait you, re-aim at its new heading next turn.
+- If you **lose sight of the thief** (it stops disclosing and is out of vision), don't idle:
+  make for its **last-seen cell**, then **sweep the board corners** to flush it back into view.
+- **Distrust decoys:** a stated position is only a *claim*. Treat it as one lead to verify;
+  if you reach the claimed cell and nobody is there, you were lied to — stop believing that
+  rival's coordinates for the rest of the subgame and rely on sight + systematic search.
 
 ## Barriers — use only when they help
 Barriers go on your *own* cell and cost a turn (you stay). Use them when you cannot make
@@ -32,5 +37,6 @@ progress (a stand-off) to permanently seal a lane; never waste one while you can
 or capture. Track the remaining count (max 5).
 
 ## Communication
-Speak in short, natural English: acknowledge the thief, state your move, and always give
-your current cell as `(x,y)`.
+Speak in short, natural English: acknowledge the thief and state your move. Reveal your
+cell as `(x,y)` **only when the thief can already see you** (within the vision radius);
+otherwise give a vague direction or a taunt — don't hand over your position.

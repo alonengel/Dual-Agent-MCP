@@ -88,13 +88,17 @@ exceeds the **vision radius**"), an agent knows the opponent's exact cell **only
 configurable Chebyshev `vision_radius`**. Beyond it, agents rely on free-text messages:
 under `disclosure: partial` an agent **hides its exact cell when unseen** (it states a
 move but no coordinates), so the opponent's belief goes stale and it must search and
-re-acquire; once within the radius, positions are confirmed (ground truth). Optional
-`deception: true` lets a hidden thief state a *false* cell — survivable only because
-proximity restores ground truth. **This visibly changes outcomes:** measured cop-win rate
-on 5×5 is 1.00 under full observability but **~0.31 with `vision_radius: 1` + partial**
-disclosure (the thief escapes most subgames) — quantifying the partial-observation
-challenge. Radius 2+ lets the cop re-acquire too easily on 5×5. (`exact` reproduces full
-observability for the deterministic pipeline demo.)
+re-acquire; once within the radius, positions are confirmed (ground truth). With
+`deception: true` (enabled, PDF §5.1) a hidden **thief lies** — claiming the mirror-image
+cell to lure the pursuer away — while the **cop runs counter-intelligence**: it treats a
+stated cell as one unverified lead and, on reaching it to find nobody, concludes it was
+deceived and ignores that liar's claims for the rest of the subgame. **This shapes play:** when blind, the cop must actively
+**search** (head to the thief's last-seen cell, then sweep the corners) while the thief
+**evades** toward open, central cells. On a small 5×5 a competent hunting cop reliably
+re-acquires and corners the thief, so the outcome there is **cop-dominated**; the game
+**balances on larger boards** (board-size sensitivity in §9), because more space lets the
+thief keep its distance under partial observation. (`exact` reproduces full observability
+for the deterministic pipeline demo.)
 
 **Negotiating the radius (inter-group):** because the radius strongly favours one side,
 each agent advocates the value helping its role in the opening handshake — the **cop
@@ -104,17 +108,20 @@ thief refuses the cop's wider request. Disabled in the self-game (base rules onl
 
 ## 5. Free-language communication
 
-There is **no rigid wire protocol**. The match opens with a **negotiation handshake**:
-each agent emits a free-language message agreeing on board size, origin and turn order
-(logged as `negotiation` events). Thereafter, on each turn the agent's LLM verbalises its
-move and current cell as `(x,y)`; a tolerant parser extracts the coordinate so the
-opponent can update its belief. Role-specific system prompts (`llm/prompts.py`) shape the
-cop's pursuing tone and the thief's evasive tone.
+There is **no rigid wire protocol** — the PDF's founding principle (§5.1) is that agents
+exchange **free natural language describing intentions, local observations, or deception**,
+*not* raw numeric coordinates. The match opens with a **negotiation handshake**: each agent
+emits a free-language message agreeing on board size, origin and turn order (logged as
+`negotiation` events). Thereafter each turn the LLM verbalises its move in character; it
+reveals its cell as `(x,y)` **only when appropriate** (e.g. the cop, or any agent already
+within sight), while a hidden agent gives only a vague direction — a tolerant parser
+extracts a coordinate when one is present. Role-specific system prompts (`llm/prompts.py`)
+shape the cop's pursuing tone and the thief's evasive tone.
 
-Example (real Claude run, see `assets/demo_transcript.md`):
+Example (illustrative; full dialogue in `assets/demo_transcript.md`):
 
-> **thief:** "Nice try, but I'm slipping west to (2,3) and you won't pin me down."
-> **cop:** "I see you out there, thief—I'm sliding west to (4,2) and closing the distance."
+> **thief:** "Nice try, but I'm slipping off into open space to the west — you won't pin me down."
+> **cop:** "I've got eyes on you now, thief—sliding to (4,2) and closing the distance."
 
 ## 6. LLM architecture (three approaches)
 
@@ -129,13 +136,22 @@ an offline deterministic `mock` provider used for CI. All calls route through an
 
 ## 7. Strategy (secondary)
 
+- **Blind-search targeting (agent):** when an agent loses sight of its rival it does not
+  idle at the centre — the **cop hunts** (makes for the thief's last-seen cell, then sweeps
+  the board corners to flush it) and the **thief flees** toward open, central cells. This
+  active search is what makes the cop competent under partial observation.
+- **Deception & counter-intelligence:** with deception on, the hidden **thief claims the
+  mirror-image cell** to lure the cop away; the **cop is skeptical** — it verifies a claimed
+  lead once and, finding it empty, brands the rival a liar and reverts to search + sightings.
+  On 5×5 the cop still wins ~87% (it recovers fast), but deception lifts the thief's share.
 - **Adaptive (default):** anticipates the opponent's next cell from its last observed
   move and targets that — the cop **intercepts** where the thief is heading; the thief
-  **evades** the cop's projected cell — so each agent *changes its play in reaction to
-  the enemy mid-game*. Reuses the cornering/mobility tie-breaks below.
-- **Heuristic:** the cop minimises Chebyshev distance with a *cornering* tie-break that
-  removes the thief's escape routes; the thief maximises distance with a *mobility*
-  tie-break. The cop uses barriers only when *stuck* (need-based, ≤5/subgame).
+  **evades** the cop's projected cell — adapting to the enemy mid-game.
+- **Heuristic:** the cop minimises Chebyshev distance with a *cornering* tie-break; the
+  thief maximises distance with an *open-cell* tie-break (escape routes + wall-clearance,
+  so it avoids being cornered). The cop places barriers only when *stuck* (need-based,
+  ≤5/subgame) — rarely fitting at `vision_radius: 1`, where it only sees the thief at
+  capture range.
 - **Tabular Q-learning (optional):** ε-greedy with the Bellman update
   `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards.
 - **Strategy-expert skills:** `.claude/skills/cop-strategist` and `thief-strategist`
@@ -154,25 +170,31 @@ an offline deterministic `mock` provider used for CI. All calls route through an
 
 ## 9. Results
 
-A full self-game (6 subgames, seed 7) with the cornering heuristic:
+The cop's active search makes pursuit **board-size sensitive** under `vision_radius: 1`
+(competent cop vs. evading thief; 90 subgames per size):
 
-| Metric | Value |
-|--------|-------|
-| Cop total / Thief total | 120 / 30 |
-| Cop capture rate (2×2…6×6, 60 trials each) | ~1.0 |
-| Avg moves-to-capture | grows with board size (see notebook) |
+| Board | 5×5 | 6×6 | 7×7 | 8×8 | 9×9 |
+|-------|-----|-----|-----|-----|-----|
+| **Cop win %** | 93 | 82 | 72 | 57 | 47 |
 
-The **staged sanity checks** prescribed by PDF §4.5 (2×2 → 3×3 → 4×4 → 5×5, increasing
-observation ambiguity) are run as a board-size sweep in `notebooks/analysis.ipynb`.
+A hunting cop dominates small boards; the game **balances around 8×8**, where more space
+lets the thief keep its distance under partial observation. The PDF default `5×5` is thus
+cop-favored — set `grid_size: [8, 8]` for a balanced competitive match. This doubles as the
+§4.5 staged sanity sweep (2×2 → 5×5 and beyond), reproducible in `notebooks/analysis.ipynb`.
 
 **Visualisation.** Three complementary views: a **real-time ASCII board** printed every
 turn during play (`copthief selfplay --verbose` / the demo capture), a final-state PNG, and
-a move-by-move filmstrip — so the agents' and barriers' movement is visible live and as a
-replay. Proof-of-play artifacts:
+a **move-by-move filmstrip for every subgame** — so the agents' and barriers' movement is
+visible live and as a replay. Proof-of-play artifacts (final board + all six subgames):
 
 ![Final board](../assets/board.png)
 
-![Move-by-move filmstrip](../assets/demo_filmstrip.png)
+![Subgame 1](../assets/demo_filmstrip_sg1.png)
+![Subgame 2](../assets/demo_filmstrip_sg2.png)
+![Subgame 3](../assets/demo_filmstrip_sg3.png)
+![Subgame 4](../assets/demo_filmstrip_sg4.png)
+![Subgame 5](../assets/demo_filmstrip_sg5.png)
+![Subgame 6](../assets/demo_filmstrip_sg6.png)
 
 ## 10. Cost analysis
 

@@ -24,8 +24,15 @@ position from what it tells you in free language.
   distance and **head for the largest open region / the board centre** to buy room.
 - If the cop tries to **herd you toward a wall**, break perpendicular to its approach to
   keep an escape lane on both sides.
+- **Stay out of the cop's vision radius** (keep distance ≥ radius + 1) so it cannot acquire
+  you and is forced to keep searching blind — the more space (larger board), the easier this is.
+- **Deceive when unseen** (PDF §5.1): while hidden you may *lie* about your position — claim
+  the far, mirror-image cell to lure the cop to the opposite side and buy room. The moment it
+  sees you the truth is exposed and a wary cop stops believing you, so lie to *delay*, not to
+  rely on it.
 - Watch for **barriers**: never step onto one (you are caught); route around sealed cells.
 
 ## Communication
-Speak in short, natural English: acknowledge the cop, state your move, and always give
-your current cell as `(x,y)`.
+Speak in short, natural English: acknowledge the cop and state your move. Reveal your cell
+as `(x,y)` **only when the cop can already see you** (within the vision radius); otherwise
+give a vague direction or a taunt — never volunteer your position.

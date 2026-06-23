@@ -13,12 +13,13 @@ barriers, `Aᵢ` = move/block, `R` = the scoring table, `Ωᵢ/O` = partial obse
 
 **Partial observation matters to strategy:** an agent only sees the opponent's exact cell
 within `vision_radius`; otherwise it acts on a (possibly stale) belief. The cop therefore
-**searches** (heads to the board centre) when it loses the trail and switches to pursuit
-on re-acquisition; the thief exploits being unseen to break contact (and may deceive).
+**hunts** when it loses the trail — it heads to the thief's *last-seen* cell, then **sweeps
+the board corners** to flush it out — and switches to direct pursuit on re-acquisition; the
+thief exploits being unseen to break contact toward open space (and may deceive).
 
 **Negotiating the rules to your advantage (inter-group only):** since the vision radius
-strongly favours one side (wide → cop wins ~100%, radius 1 → thief escapes ~69%), each
-agent *advocates* the radius that helps its role — the **cop requests a wider radius**, the
+strongly favours one side (a wide radius lets the cop re-acquire at will; a narrow one
+forces it to search blind), each agent *advocates* the radius that helps its role — the **cop requests a wider radius**, the
 **thief a narrower one**. Per the assignment, an enhancement only takes effect if **both
 sides agree**; on conflict the base radius applies (so a savvy thief simply refuses a wider
 radius). In the self-game this is disabled — the base rules are followed exactly.
@@ -30,14 +31,15 @@ radius). In the self-game this is disabled — the base rules are followed exact
   equidistant steps, tie-break by **cornering** — prefer the cell that also removes a
   thief escape route, herding it toward the walls.
 - **Thief:** move to the reachable neighbour **maximizing** Chebyshev distance from
-  the believed cop cell; among equidistant cells, tie-break by **mobility** (most free
-  neighbours) to avoid self-trapping in corners.
+  the believed cop cell; among equidistant cells, tie-break by **open space** (most free
+  neighbours, then clearance from the walls) to avoid being cornered.
 - **Inputs:** observation (own cell, move number, barriers left), believed opponent
   cell (parsed from dialogue; exact in self-play). **Output:** a one-step `Move`.
-- **Rationale:** deterministic, debuggable, zero-cost. The cornering tie-break makes
-  the cop a competent pursuer that reliably captures on a bounded grid; the metric of
-  interest becomes *moves-to-capture* (see the analysis notebook), which grows with
-  board size. **Limitation:** still one-step greedy with no multi-turn planning.
+- **Rationale:** deterministic, debuggable, zero-cost. The cornering tie-break plus the
+  blind-search **hunt** make the cop a competent pursuer that reliably captures on small
+  boards. As the board grows the thief's evasion holds, so the **cop-win rate falls with
+  board size** (balances ~8×8; see REPORT §9). **Limitation:** still one-step greedy with
+  no multi-turn planning.
 
 ## 3. Strategy B — Tabular Q-learning (optional)
 

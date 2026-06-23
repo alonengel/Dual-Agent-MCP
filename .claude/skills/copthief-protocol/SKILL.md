@@ -11,8 +11,11 @@ Two autonomous agents — **Cop** and **Thief** — each run as their own MCP se
 Per PDF section 5.2 the **LLM lives in the MCP client (orchestrator)**, not the servers:
 the servers expose **pure tools** (`reset`, `observe`, `move`, `place_barrier`, `note`)
 and the client runs each agent's LLM persona, decides, verbalises, and calls the tools.
-There is **no rigid wire protocol**: agents coordinate in **free natural language**, and
-every message MUST state the speaker's current cell as `(x,y)` (a tolerant parser reads it).
+There is **no rigid wire protocol** (PDF §5.1): agents coordinate in **free natural
+language**, describing their **intentions, local observations, or attempts at deception** —
+they do **not** pass raw numeric coordinates as a protocol. A message *may* reveal the
+speaker's cell as `(x,y)` (a tolerant parser reads it if present), but only when that serves
+the role; under partial observation a hidden agent withholds it.
 
 ## Roles & objective
 - **Cop**: reach the thief's cell (capture). Pursuing, calm tone.
@@ -26,8 +29,9 @@ every message MUST state the speaker's current cell as `(x,y)` (a tolerant parse
 
 ## Message contract (free text, one or two sentences)
 1. Acknowledge the opponent's last message.
-2. State your move ("I step up-right", "I hold and drop a barrier").
-3. State your resulting position explicitly as `(x,y)`.
+2. Convey your move/intent in character ("I step up-right", "I hold and drop a barrier").
+3. Reveal your cell as `(x,y)` **only when appropriate** — the cop may; a hidden thief
+   instead gives a vague direction, states intent, or deceives (PDF §5.1).
 
 ## Negotiation / handshake (start of a subgame)
 Agree, in natural language, on: board size and origin, turn order (thief first), and any
@@ -37,4 +41,5 @@ the fixed cop-win = 20 score).
 ## Hard invariants
 - Never invent illegal moves; the orchestrator (referee) validates everything.
 - Self-game (single team): follow the base rules exactly — no enhancements.
-- Always include a real `(x,y)`; ambiguous messages break the opponent's belief update.
+- When you *do* reveal a position, write it as `(x,y)` so the parser reads it; withholding
+  it under partial observation is legitimate (the opponent's belief simply goes stale).
