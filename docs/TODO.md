@@ -14,7 +14,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] SDK facade + CLI (`selfplay`, `serve`)
 - [x] JSON report builders (internal + bonus) + Gmail emailer
 - [x] GUI board viewer (audit-log → PNG)
-- [x] Tests ≥ 85% coverage (achieved 97%), ruff clean, files ≤ 150 lines
+- [x] Tests ≥ 85% coverage (currently 93%), ruff clean, files ≤ 150 lines
 
 ## Phase 2 — Level 2: cloud deployment (self-game in the cloud)
 - [x] FastMCP cop/thief servers over HTTP with token auth (code complete)
@@ -22,7 +22,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] `serve-combined` single-endpoint mode + persistent MCP sessions
 - [x] Cloudflare quick tunnel verified end-to-end (full 6-subgame `netplay`)
 - [x] Local combined-mode proof (`scripts/run_local_cloud.ps1`, `tasks.ps1 cloud`)
-- [ ] Install `cloudflared` on your machine (`winget install Cloudflare.cloudflared`)
+- [x] Install `cloudflared` on your machine (`winget install Cloudflare.cloudflared`)
 - [ ] Run one public self-game: `tasks.ps1 cloud` → set tunnel URLs → `netplay`
 - [ ] Optional: deploy to a persistent host (free VM + Caddy, or named Cloudflare tunnel)
 
@@ -33,11 +33,11 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [ ] Both teams email matching bonus JSON reports (mutual agreement required)
 
 ## Submission checklist (individual + team)
-- [ ] Fill `config/config.yaml` → `team.group_name`, `team.students`, `team.github_repo`
-- [ ] Record demo video: `uv run copthief selfplay --gui` with `COPTHIEF_LLM_PROVIDER=claude`
-- [ ] Regenerate assets: `powershell -File tasks.ps1 demo`
+- [x] Fill `config/config.yaml` → `team.group_name`, `team.students`, `team.github_repo`
+- [ ] Record demo video: `uv run copthief selfplay --verbose --gui --seed 3` with `COPTHIEF_LLM_PROVIDER=claude`
+- [x] Regenerate assets: `uv run python scripts/capture_demo.py` (per-subgame filmstrips)
 - [ ] Gmail OAuth: place `credentials.json`, run `uv run copthief selfplay --email` once
-- [ ] Export [`docs/REPORT.md`](REPORT.md) to PDF for Moodle (individual submission)
+- [x] Scientific report is `README.md` at the repo root (PDF §11) — no PDF export needed
 - [ ] Rotate any exposed API keys (Anthropic key was in chat history)
 
 ## Cross-cutting (definition of done per item: tested + ruff-clean + ≤150 lines)
