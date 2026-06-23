@@ -45,6 +45,8 @@ mcp:
   cop_port: 8181
   thief_port: 8182
   combined_port: 8080    # single-endpoint mode: serves /cop/mcp and /thief/mcp
+  request_timeout: 120   # seconds per MCP tool call (raise for slow public tunnels)
+  sse_read_timeout: 600  # seconds for the long-lived server->client stream (default ~5m)
 
 llm:
   # mock (offline default) | claude (CLI+Anthropic fallback) | ollama | api.

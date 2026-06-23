@@ -16,20 +16,31 @@ _SKIP_NGROK = {"ngrok-skip-browser-warning": "true"}
 
 
 class PersistentMcpSession:
-    """One connection per agent; reconnect once when a tunnel drops an idle link."""
+    """One connection per agent; reconnect once when a tunnel drops an idle link.
 
-    def __init__(self, urls: dict[Role, str], token: str = ""):
+    Generous timeouts keep long matches alive over slow public tunnels: the
+    long-lived server->client SSE stream is otherwise cancelled at the MCP default
+    (~5 min), and a slow-but-progressing call should wait rather than be killed and
+    retried (a retry costs extra round-trips, making a slow tunnel even slower).
+    """
+
+    def __init__(self, urls: dict[Role, str], token: str = "",
+                 request_timeout: float = 120.0, sse_read_timeout: float = 600.0):
         self._urls = urls
         self._token = token
+        self._request_timeout = request_timeout
+        self._sse_read_timeout = sse_read_timeout
         self._clients: dict[Role, Client] = {}
 
-    def _transport(self, role: Role) -> StreamableHttpTransport:
+    def _make_client(self, role: Role) -> Client:
         auth = BearerAuth(self._token) if self._token else None
-        return StreamableHttpTransport(self._urls[role], auth=auth, headers=_SKIP_NGROK)
+        transport = StreamableHttpTransport(self._urls[role], auth=auth, headers=_SKIP_NGROK,
+                                            sse_read_timeout=self._sse_read_timeout)
+        return Client(transport, timeout=self._request_timeout)
 
     async def open(self) -> None:
         for role in Role:
-            client = Client(self._transport(role))
+            client = self._make_client(role)
             await client.__aenter__()
             self._clients[role] = client
 
@@ -42,7 +53,7 @@ class PersistentMcpSession:
     async def _reconnect(self, role: Role) -> None:
         with contextlib.suppress(Exception):
             await self._clients[role].__aexit__(None, None, None)
-        client = Client(self._transport(role))
+        client = self._make_client(role)
         await client.__aenter__()
         self._clients[role] = client
 

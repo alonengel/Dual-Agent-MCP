@@ -33,7 +33,10 @@ class NetworkMatch:
         self.mcp = config.section("mcp")
         self.token = os.environ.get("COPTHIEF_MCP_TOKEN", "")
         self.scorebook = ScoreBook(config.section("scoring"))
-        self.urls = {Role.COP: self.mcp.get("cop_url"), Role.THIEF: self.mcp.get("thief_url")}
+        self.urls = {
+            Role.COP: os.environ.get("COPTHIEF_COP_URL") or self.mcp.get("cop_url"),
+            Role.THIEF: os.environ.get("COPTHIEF_THIEF_URL") or self.mcp.get("thief_url"),
+        }
         self._session: PersistentMcpSession | None = None
         self.agents = {r: Agent(r, build_strategy(config.section("strategy")),
                                 build_provider(config.section("llm"))) for r in Role}
@@ -41,6 +44,8 @@ class NetworkMatch:
         self.radius, self.radius_mode = negotiation.negotiated_radius(game)
         self.exact = str(game.get("disclosure", "exact")).lower() == "exact"
         self.deception = bool(game.get("deception", False))
+        self.req_timeout = float(self.mcp.get("request_timeout", 120))
+        self.sse_timeout = float(self.mcp.get("sse_read_timeout", 600))
 
     async def _call(self, role: Role, tool: str, args: dict[str, Any]) -> Any:
         assert self._session is not None
@@ -115,7 +120,8 @@ class NetworkMatch:
     async def run(self, rng) -> dict[str, Any]:
         """Play all subgames over persistent per-server connections and aggregate."""
         self.rng = rng
-        async with PersistentMcpSession(self.urls, self.token) as session:
+        async with PersistentMcpSession(self.urls, self.token,
+                                        self.req_timeout, self.sse_timeout) as session:
             self._session = session
             await self._negotiate()
             results = [await self._valid_subgame(i, rng)
