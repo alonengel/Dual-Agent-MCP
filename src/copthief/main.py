@@ -14,14 +14,18 @@ import sys
 from copthief.constants import Role
 
 
-def _email_report(sdk, path, subject: str) -> None:
-    """Email the report. PDF section 9: the body must be ONLY the structured JSON."""
+def _email_report(sdk, path, subject: str, to_addr: str | None = None) -> None:
+    """Email the report. PDF section 9: the body must be ONLY the structured JSON.
+
+    ``to_addr`` overrides the configured course recipient (handy for testing).
+    """
     import json
 
     from copthief.reporting.emailer import send_report_email
 
     report = json.loads(path.read_text(encoding="utf-8"))
-    send_report_email(sdk.config.get("reporting.email_to", ""), subject, report, gate=sdk.gate)
+    recipient = to_addr or sdk.config.get("reporting.email_to", "")
+    send_report_email(recipient, subject, report, gate=sdk.gate)
 
 
 def _selfplay(args: argparse.Namespace) -> int:
@@ -44,7 +48,7 @@ def _selfplay(args: argparse.Namespace) -> int:
 
         render_audit(sdk.audit.path, sdk.config.root)
     if args.email:
-        _email_report(sdk, path, "CopThief self-game report")
+        _email_report(sdk, path, "CopThief self-game report", args.email_to)
     return 0
 
 
@@ -57,7 +61,7 @@ def _netplay(args: argparse.Namespace) -> int:
     path = sdk.report_and_save(match)
     print(f"Totals: {match['totals']}\nReport: {path}")
     if args.email:
-        _email_report(sdk, path, "CopThief inter-group game report")
+        _email_report(sdk, path, "CopThief inter-group game report", args.email_to)
     return 0
 
 
@@ -86,6 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--seed", type=int, default=None, help="RNG seed for reproducibility")
     play.add_argument("--gui", action="store_true", help="render the board from the audit log")
     play.add_argument("--email", action="store_true", help="email the JSON report via Gmail")
+    play.add_argument("--email-to", default=None, help="override report recipient (testing)")
     play.add_argument("--games", type=int, default=None, help="override subgame count (demo)")
     play.add_argument("--verbose", action="store_true", help="print agent dialogue live")
     play.set_defaults(func=_selfplay)
@@ -93,6 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
     net = sub.add_parser("netplay", help="run a match against running MCP servers")
     net.add_argument("--seed", type=int, default=None, help="RNG seed for reproducibility")
     net.add_argument("--email", action="store_true", help="email the JSON report via Gmail")
+    net.add_argument("--email-to", default=None, help="override report recipient (testing)")
     net.set_defaults(func=_netplay)
 
     serve = sub.add_parser("serve", help="start an agent MCP server")

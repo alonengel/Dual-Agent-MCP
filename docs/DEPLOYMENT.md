@@ -170,14 +170,18 @@ preferred over username/password). This follows the course Gmail-API guide exact
 5. First send opens a browser consent screen and writes **`token.json`** (git-ignored).
    This matches the emailer's defaults (`GMAIL_CLIENT_SECRET_FILE=credentials.json`,
    scope `gmail.modify`).
-6. Send:
+6. Send (real submission uses the course address from `config.yaml`):
 
 ```bash
 uv run copthief selfplay --email
+# Test to your own inbox first (override recipient, short 1-subgame run):
+uv run copthief selfplay --games 1 --email --email-to you@gmail.com
 ```
 
-If credentials are missing the emailer logs a warning and the report is still saved
-to `results/` — it never crashes the run.
+The **sending** account is whichever Gmail you authorize in the browser consent (must be
+listed under Test users); `--email-to` only changes the **recipient**. The email body is
+**only** the JSON report (PDF §9). If credentials are missing the emailer logs a warning
+and the report is still saved to `results/` — it never crashes the run.
 
 **Troubleshooting:** "Access blocked / app isn't verified" is normal in Testing mode as
 long as your account is in Test users. If you changed scopes, delete `token.json` and
