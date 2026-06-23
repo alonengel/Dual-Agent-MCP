@@ -36,9 +36,9 @@ approaches; configure via `config.yaml` `llm.provider` (+ `.env`).
 1. **Cloud API key (recommended, simplest).** Set `llm.provider: api` and the
    matching `*_API_KEY`. No local machine exposure; cheap because messages are short.
 2. **Local Ollama exposed via a secure tunnel.** Run Ollama locally, then expose
-   `127.0.0.1:11434` with **ngrok** (Traffic Policy + Basic Auth) or **Localtonet**.
-   Point `OLLAMA_BASE_URL` at the tunnel URL; the MCP server reaches it with an auth
-   header.
+   `127.0.0.1:11434` with a tunnel (ngrok paid, Localtonet, etc.). See
+   [`docs/archive/ngrok.md`](archive/ngrok.md) for ngrok notes. Point `OLLAMA_BASE_URL`
+   at the tunnel URL; the MCP server reaches it with an auth header.
 3. **Hybrid (safest local dev).** Keep the LLM **and** the game client on your
    machine; only the MCP servers are public. The client makes **outbound** HTTPS to
    the cloud servers — no inbound ports, no IP exposure.
@@ -54,18 +54,50 @@ Host them anywhere reachable from the public internet:
   public HTTPS URL. Put those URLs in `config.yaml` under `mcp.cop_url` / `mcp.thief_url`.
 - **Your own VM (e.g. free GCP credits).** Run both servers on different ports behind
   a reverse proxy with TLS; open only the needed ports.
-- **Tunnel a locally-running server (quickest).** Start a server locally and expose it:
+- **Tunnel a locally-running server (quickest).** Use **single-endpoint mode** so one public
+  URL covers both agents (required for free tunnels):
 
 ```bash
-# terminal 1 + 2: start the servers locally
-uv run copthief serve --role cop
-uv run copthief serve --role thief
-# terminal 3 + 4: expose each port publicly (example with ngrok)
-ngrok http 8181
-ngrok http 8182
+uv run copthief serve-combined   # /cop/mcp and /thief/mcp on :8080
+# then expose :8080 with Cloudflare (recommended) or ngrok paid — see below
 ```
 
-Then set `mcp.cop_url` / `mcp.thief_url` to the `https://...ngrok... /mcp` URLs.
+### Cloudflare quick tunnel (recommended — verified free)
+Full 6-subgame `netplay` completed end-to-end over a `trycloudflare.com` quick tunnel:
+
+```bash
+winget install Cloudflare.cloudflared          # one-time
+uv run copthief serve-combined                 # terminal 1 (:8080)
+cloudflared tunnel --url http://localhost:8080 # terminal 2 -> prints https URL
+```
+
+Or one command: `powershell -File tasks.ps1 cloud`
+
+Then set in `config/config.yaml`:
+```yaml
+mcp:
+  cop_url: "https://<id>.trycloudflare.com/cop/mcp"
+  thief_url: "https://<id>.trycloudflare.com/thief/mcp"
+```
+Keep the same `COPTHIEF_MCP_TOKEN` on both ends and run `uv run copthief netplay`.
+Quick-tunnel URLs change each run; for a fixed URL use a free Cloudflare account +
+named tunnel.
+
+**Local two-server mode** (no tunnel) still works for development:
+```bash
+uv run copthief serve --role cop      # :8181
+uv run copthief serve --role thief     # :8182
+# or: powershell -File scripts/run_local_cloud.ps1
+```
+
+### Other tunnel options
+- **ngrok (paid)** or **free VM + Caddy** — also work with `serve-combined`.
+- **ngrok free tier** — tested but **unreliable** for a full match (connection-rate cap
+  + idle drops). Full walkthrough, gotchas, and example config are archived in
+  [`docs/archive/ngrok.md`](archive/ngrok.md) (not recommended for CopThief public play).
+
+The orchestrator reuses persistent MCP connections and reconnects once on failure; the
+client also sends `ngrok-skip-browser-warning` for ngrok hosts.
 
 **Network cautions (from the lecture):** corporate firewalls may block non-standard
 ports — prefer outbound HTTPS and test from a permissive network. Verify each URL is
@@ -117,21 +149,55 @@ re-run to force a fresh consent.
 
 ## 4. Inter-group bonus (Level 3) — one-week, no extensions
 
+### How the professor wants MCP to work between teams (PDF §5, §6, §12 + lecture)
+- **Each team runs its own two MCP servers** — one for the **cop**, one for the **thief**
+  — so a team publishes **two URLs**. Servers are FastMCP over HTTP(S), each guarded by a
+  **token** that can be revoked.
+- **Agents are autonomous and isolated**: an agent knows nothing about the rival except
+  what it is told. They coordinate in **free natural language** (no rigid protocol); the
+  internal implementation is irrelevant "as long as they understand each other"
+  (lecture). Our design keeps the **LLM in the client/orchestrator** (PDF §5.2) and the
+  servers as pure tools.
+- **Pairing is arranged out-of-band first** (WhatsApp/phone): you agree to play, then
+  **exchange tokens and URLs**. The token is the access control — delete/rotate it to cut
+  the other side off.
+- **Role split (PDF §12.1):** 6 subgames — 3 with **your cop vs. their thief**, then 3
+  with **your thief vs. their cop**.
+- **Autonomous result reporting:** at the end of the 6 subgames **each team emails its own
+  JSON report** to the course address. The grader **compares the two reports by group
+  name**; the bonus counts **only if both reports agree exactly** — any mismatch or
+  disagreement → **0 for both** (lecture: "his agent auto-rejects"). Keep the **audit
+  logs** as the only accepted dispute evidence.
+
+### How you'll use it (Cloudflare — verified, free, no account)
+```bash
+winget install Cloudflare.cloudflared           # one-time (done)
+uv run copthief serve-combined                  # terminal 1  (:8080, both agents)
+cloudflared tunnel --url http://localhost:8080  # terminal 2  -> prints your https URL
+```
+Then share these with your partner team (and set the same `COPTHIEF_MCP_TOKEN` on both
+ends):
+```
+https://<id>.trycloudflare.com/cop/mcp
+https://<id>.trycloudflare.com/thief/mcp
+```
+Whoever runs the match sets the four URLs in `config.yaml` (`mcp.cop_url`/`thief_url` for
+each side) and runs `uv run copthief netplay`. Quick-tunnel URLs change each run; use a
+free Cloudflare account + named tunnel if you want a fixed URL.
+
+### Steps
 1. **Find a partner team** (coordinate over WhatsApp); agree on shared assumptions.
-2. **Exchange** the four MCP URLs (cop+thief per team) and the tokens, out of band.
+2. **Exchange** the MCP URLs (cop+thief per team) and the tokens, out of band.
 3. **Optional rule enhancements** — only in inter-group play, agreed at the *agent*
-   level (e.g. 7 barriers, cop moves two steps, extra cops). Never contradict the base
-   rules or the cop-win = 20 invariant. Express changes in `config.yaml` (no code edits)
-   so both sides run the same parameters.
-4. **Play 6 subgames**: 3 with your cop vs. their thief, 3 with your thief vs. their cop
-   (see report section 9.2 / `build_bonus_report`).
-5. **Both teams email matching reports.** The grader compares by group name; any
-   mismatch or disagreement → 0 points for that series. Keep the **audit logs** — they
-   are the only accepted evidence in a dispute.
+   level (e.g. 7 barriers, wider vision radius). Never contradict the base rules or the
+   cop-win = 20 invariant. Express changes in `config.yaml` (no code edits) so both sides
+   run the same parameters.
+4. **Play 6 subgames** (role split above; see report §9.2 / `build_bonus_report`).
+5. **Both teams email matching reports** (`netplay --email`); mismatch → 0 for that series.
 
 ### Scoring recap
 - Per subgame: cop win 20/5, thief win 10/5 (max 90, min 30 per team).
-- Bonus: higher total → 10, lower → 7, exact tie → 5 (averaged across series).
+- Bonus: higher total → 10, lower → 7, exact tie → 5 (averaged across valid series).
 
 ---
 
