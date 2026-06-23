@@ -162,7 +162,13 @@ A full self-game (6 subgames, seed 7) with the cornering heuristic:
 | Cop capture rate (2×2…6×6, 60 trials each) | ~1.0 |
 | Avg moves-to-capture | grows with board size (see notebook) |
 
-Parameter sweep and analysis: `notebooks/analysis.ipynb`. Proof-of-play artifacts:
+The **staged sanity checks** prescribed by PDF §4.5 (2×2 → 3×3 → 4×4 → 5×5, increasing
+observation ambiguity) are run as a board-size sweep in `notebooks/analysis.ipynb`.
+
+**Visualisation.** Three complementary views: a **real-time ASCII board** printed every
+turn during play (`copthief selfplay --verbose` / the demo capture), a final-state PNG, and
+a move-by-move filmstrip — so the agents' and barriers' movement is visible live and as a
+replay. Proof-of-play artifacts:
 
 ![Final board](../assets/board.png)
 
@@ -170,17 +176,27 @@ Parameter sweep and analysis: `notebooks/analysis.ipynb`. Proof-of-play artifact
 
 ## 10. Cost analysis
 
-Messages are short (one–two sentences), so token use is minimal. Using the Claude **CLI**
-on a subscription, self-games are effectively **free**; the Anthropic API fallback costs a
-few cents per full game with Opus. Detailed per-model token accounting can be produced from
-the audit log.
+Every external LLM (and Gmail) call routes through the central **API gatekeeper**
+(rate-limit + retry, config-driven) and a **usage meter** (`shared/usage.py`) that
+estimates input/output tokens (~4 chars/token) and USD cost from a configurable per-model
+price table. After each game a `results/usage_<ts>.json` is written with the per-model
+breakdown and totals. Because messages are short (one–two sentences), token use is minimal:
+on the Claude **CLI** subscription self-games are effectively **free**; the Anthropic-API
+fallback (Opus) costs only a few cents per full 6-subgame game. The meter makes the cost of
+any future cloud-API run measurable and reportable without code changes.
 
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **79 tests, ~98% coverage** (`pytest --cov`); external HTTP/LLM mocked; hermetic.
+- **102 tests, ~93% coverage** (`pytest --cov`); external HTTP/LLM mocked; hermetic.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config.
+- **API gatekeeper**: all external LLM/Gmail calls route through one throttled, retrying,
+  metered chokepoint (Template-Method `LLMProvider.complete`).
+- **UI/UX (Nielsen heuristics):** the CLI/GUI favour *visibility of system status* (live
+  board + turn-by-turn dialogue), *match between system and real world* (natural-language
+  taunts, human (x,y) labels), *consistency* (one `copthief` command surface), and *error
+  prevention/recovery* (graceful email/LLM degradation, clear logs).
 - Verified from a **fresh clone** (`uv sync` + tests + run) — self-sufficient repo.
 
 ## 12. Deployment & levels

@@ -109,12 +109,12 @@ src/copthief/
   sdk/            single entry point for all logic (SDK layer)
   domain/         board, rules, scoring, subgame state machine, models
   strategy/       heuristic + tabular Q-learning decision making
-  llm/            provider abstraction (mock/ollama/api)
+  llm/            provider abstraction (mock/claude/ollama/api) via API gatekeeper
   agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF 5.2)
   orchestrator/   MCP client (owns the LLM) + match runner driving the dialogue
   reporting/      JSON report builder + Gmail emailer
-  shared/         config, logging/audit, version, API gatekeeper
-  gui/            board viewer
+  shared/         config, logging/audit, version, API gatekeeper, token-usage meter
+  gui/            live ASCII board + final-board viewer + filmstrip
 docs/             PRD.md, PLAN.md, TODO.md, PRD_strategy.md
 config/  tests/  results/  logs/  assets/
 ```
@@ -133,6 +133,15 @@ See [`docs/REPORT.md`](docs/REPORT.md) (the consolidated scientific write-up),
 - No secrets in source: keys come from environment variables only; `.env` is git-ignored
   and `.env.example` ships placeholder values.
 - The MCP server URL requires a token; revoke/rotate it to cut off third-party access.
+
+## Contributing
+
+- Use **uv** for everything (`uv sync`, `uv run ...`); never `pip`/`venv` directly.
+- Keep every source file **≤ 150 lines**; one responsibility per module (split helpers out).
+- Follow TDD: add/adjust tests under `tests/`, keep coverage **≥ 85%** (`uv run pytest --cov`).
+- Code must pass **`uv run ruff check .`** with zero errors; add docstrings explaining *why*.
+- No hardcoded config or secrets — read from `config/` and environment variables.
+- Run `powershell -File tasks.ps1 all` (lint + tests) before opening a PR.
 
 ## License & Credits
 
