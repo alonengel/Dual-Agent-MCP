@@ -44,8 +44,10 @@ team:
 mcp:
   transport: "http"          # HTTP transport even locally (prepares for cloud)
   host: "127.0.0.1"
-  cop_url: "http://127.0.0.1:8181/mcp"
-  thief_url: "http://127.0.0.1:8182/mcp"
+  # Team's fixed public MCP endpoint (Cloudflare named tunnel -> serve-combined).
+  # Local dev overrides these to 127.0.0.1:8080 via COPTHIEF_*_URL (run_local_cloud.ps1).
+  cop_url: "https://mcp.alon.website/cop/mcp"
+  thief_url: "https://mcp.alon.website/thief/mcp"
   cop_port: 8181
   thief_port: 8182
   combined_port: 8080    # single-endpoint mode: serves /cop/mcp and /thief/mcp

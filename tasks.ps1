@@ -1,7 +1,7 @@
 # Simple task runner wrapping the common uv commands.
 # Usage:  powershell -File tasks.ps1 <task>   (or: pwsh -File tasks.ps1 <task>)
 #   setup | lint | fmt | test | cov | selfplay | demo | serve-cop | serve-thief
-#   serve-combined | cloud | cloudplay | netplay | notebook | all
+#   serve-combined | cloud | cloudplay | tunnel | netplay | notebook | all
 param([Parameter(Position = 0)][string]$Task = "all")
 
 $ErrorActionPreference = "Stop"
@@ -80,6 +80,33 @@ switch ($Task) {
         try {
             Write-Host "Cloudflare quick tunnel (Ctrl+C stops tunnel + server)..."
             & $cloudflared tunnel --url http://localhost:8080
+        } finally {
+            Stop-PortListener -Port 8080
+            if ($srv -and -not $srv.HasExited) { Stop-Process -Id $srv.Id -Force }
+        }
+    }
+    "tunnel" {
+        # Fixed-URL named tunnel (e.g. https://mcp.alon.website). One-time setup first:
+        # cloudflared tunnel login / create copthief / route dns + ~/.cloudflared/config.yml.
+        if (-not $env:COPTHIEF_MCP_TOKEN) {
+            Write-Host "Set COPTHIEF_MCP_TOKEN first (the same token the client/partner uses)."
+            exit 1
+        }
+        $cloudflared = Resolve-Cloudflared
+        if (-not $cloudflared) { Write-Host "cloudflared not found."; exit 1 }
+        Stop-PortListener -Port 8080
+        Start-Sleep -Seconds 1
+        Write-Host "Starting combined MCP server on :8080..."
+        $srv = Start-Process -FilePath "uv" -ArgumentList "run", "copthief", "serve-combined" `
+            -PassThru -NoNewWindow
+        if (-not (Wait-PortReady -Port 8080)) {
+            Write-Host "ERROR: MCP server did not bind to :8080"
+            if ($srv -and -not $srv.HasExited) { Stop-Process -Id $srv.Id -Force }
+            exit 1
+        }
+        Write-Host "Server ready; starting named tunnel 'copthief' (Ctrl+C stops both)..."
+        try {
+            & $cloudflared tunnel run copthief
         } finally {
             Stop-PortListener -Port 8080
             if ($srv -and -not $srv.HasExited) { Stop-Process -Id $srv.Id -Force }

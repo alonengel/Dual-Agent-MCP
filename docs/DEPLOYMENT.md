@@ -89,8 +89,37 @@ mcp:
   thief_url: "https://<id>.trycloudflare.com/thief/mcp"
 ```
 Keep the same `COPTHIEF_MCP_TOKEN` on both ends and run `uv run copthief netplay`.
-Quick-tunnel URLs change each run; for a fixed URL use a free Cloudflare account +
-named tunnel.
+Quick-tunnel URLs change each run; for a **fixed URL**, use a named tunnel (below).
+
+### Cloudflare named tunnel — fixed URL on your own domain (VERIFIED)
+If your domain's DNS is on Cloudflare, you get a **stable** HTTPS URL with full SSE
+support and no request cap. It adds **only a subdomain** (e.g. `mcp.<domain>`); your
+existing site is untouched. One-time setup:
+```bash
+cloudflared tunnel login                                  # browser auth (your account)
+cloudflared tunnel create copthief                        # creates tunnel + creds JSON
+cloudflared tunnel route dns copthief mcp.<your-domain>   # adds the subdomain CNAME
+```
+Then create `~/.cloudflared/config.yml`:
+```yaml
+tunnel: <tunnel-uuid>
+credentials-file: <path>/.cloudflared/<tunnel-uuid>.json
+ingress:
+  - hostname: mcp.<your-domain>
+    service: http://localhost:8080
+  - service: http_status:404
+```
+Run it (one command): `powershell -File tasks.ps1 tunnel` (starts `serve-combined` +
+`cloudflared tunnel run copthief`). Your two stable URLs are then:
+```
+https://mcp.<your-domain>/cop/mcp
+https://mcp.<your-domain>/thief/mcp
+```
+Set `mcp.cop_url` / `mcp.thief_url` in `config.yaml` to those (so the §9.1 report shows
+the real endpoints), keep `COPTHIEF_MCP_TOKEN` set on both ends, and `uv run copthief
+netplay`. Verified end-to-end: a full 6-subgame match over `https://mcp.alon.website`
+(cop 60 / thief 50), with an unauthenticated probe correctly returning **401**. The
+credentials JSON and `cert.pem` stay outside the repo — never commit them.
 
 **Local two-server mode** (no tunnel) still works for development:
 ```bash
