@@ -62,6 +62,14 @@ def _serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _serve_combined(args: argparse.Namespace) -> int:
+    """Start both agents under one HTTP endpoint (/cop/mcp and /thief/mcp)."""
+    from copthief.agents.combined import run_combined
+
+    run_combined()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse CLI parser."""
     parser = argparse.ArgumentParser(prog="copthief", description="Dual AI agents pursuit game")
@@ -81,6 +89,10 @@ def build_parser() -> argparse.ArgumentParser:
     serve = sub.add_parser("serve", help="start an agent MCP server")
     serve.add_argument("--role", choices=[r.value for r in Role], required=True)
     serve.set_defaults(func=_serve)
+
+    combined = sub.add_parser("serve-combined",
+                              help="serve both agents on one endpoint (/cop/mcp, /thief/mcp)")
+    combined.set_defaults(func=_serve_combined)
     return parser
 
 

@@ -44,6 +44,7 @@ mcp:
   thief_url: "http://127.0.0.1:8182/mcp"
   cop_port: 8181
   thief_port: 8182
+  combined_port: 8080    # single-endpoint mode: serves /cop/mcp and /thief/mcp
 
 llm:
   # mock (offline default) | claude (CLI+Anthropic fallback) | ollama | api.
