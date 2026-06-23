@@ -30,5 +30,5 @@ finally {
     foreach ($procId in $listeners) {
         if ($procId -and $procId -ne 0) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue }
     }
-    if ($srv -and -not $srv.HasExited) { Stop-Process -Id $srv.Id -Force }
+    if ($srv -and -not $srv.HasExited) { Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue }
 }
