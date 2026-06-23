@@ -41,10 +41,11 @@ class HeuristicStrategy(Strategy):
 
     @staticmethod
     def _best_for_thief(candidates: list[Position], opponent: Position, board: Board) -> Position:
-        """Flee: maximise distance from the cop, tie-broken by staying mobile."""
+        """Evade: flee to the farthest reachable cell, breaking ties toward open, central
+        cells (more escape routes, away from walls) so the thief avoids being cornered."""
         far = max(chebyshev(c, opponent) for c in candidates)
         best = [c for c in candidates if chebyshev(c, opponent) == far]
-        return max(best, key=lambda c: len(board.free_neighbours(c)))
+        return max(best, key=lambda c: (len(board.free_neighbours(c)), _wall_clearance(c, board)))
 
     @staticmethod
     def _best_for_cop(candidates: list[Position], opponent: Position, board: Board) -> Position:
@@ -75,3 +76,9 @@ class HeuristicStrategy(Strategy):
 def _thief_escapes(thief: Position, cop_cell: Position, board: Board) -> int:
     """Count the thief's free neighbours, excluding the cell the cop would occupy."""
     return sum(1 for n in board.free_neighbours(thief) if n != cop_cell)
+
+
+def _wall_clearance(pos: Position, board: Board) -> int:
+    """Distance to the nearest board edge — higher means more central, harder to corner."""
+    return min(pos.x - board.origin, board.origin + board.width - 1 - pos.x,
+               pos.y - board.origin, board.origin + board.height - 1 - pos.y)

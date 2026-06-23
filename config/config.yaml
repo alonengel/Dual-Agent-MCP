@@ -12,7 +12,7 @@ game:
   # cell within this Chebyshev radius; beyond it, it relies on free-text messages.
   vision_radius: 1       # base radius => partial observation genuinely matters on 5x5
   disclosure: "partial"  # partial = reveal exact cell only when seen; exact = always
-  deception: false       # when hidden, the thief may state a false location
+  deception: true        # when hidden, an agent may state a false location (PDF 5.1)
   # Agent-level rule negotiation (inter-group bonus only; self-game keeps base rules).
   # Each agent advocates the radius favouring its role; it sticks only if BOTH agree,
   # else the base radius applies. Cop prefers wider vision, thief prefers narrower.

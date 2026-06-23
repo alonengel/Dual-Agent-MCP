@@ -37,6 +37,7 @@ class MatchRunner:
         self.radius, self.radius_mode = negotiation.negotiated_radius(game_cfg)
         self.exact = str(game_cfg.get("disclosure", "exact")).lower() == "exact"
         self.deception = bool(game_cfg.get("deception", False))
+        cop.skeptical = self.deception  # only the cop runs counter-intelligence on lies
 
     def _say(self, text: str) -> None:
         """Echo human-readable progress to an optional reporter (used by the demo)."""
@@ -65,6 +66,8 @@ class MatchRunner:
     def _run_subgame(self, index: int):
         """Play one subgame to its terminal outcome and return its score."""
         game = build_subgame(self.game_cfg, self.rng)
+        for agent in self.agents.values():
+            agent.reset()  # clear beliefs/trust/patrol so subgames are independent
         self.audit.record("subgame_start", index=index,
                           cop=game.cop.as_tuple(), thief=game.thief.as_tuple())
         self._say(f"\n== Subgame {index} | cop {game.cop.as_tuple()} vs "
@@ -88,12 +91,12 @@ class MatchRunner:
 
         visible = agent.perceive(game.position_of(role), opp_true, self.radius)
         obs = observe(game, role, last_message)
-        target = agent.belief or perception.center(game.board)
-        move = agent.decide(obs, game.board, fallback_opponent=target)
+        move = agent.decide(obs, game.board)
         result = game.apply(move)
 
+        deceiving = self.deception and role is Role.THIEF  # only the thief lures; cop is honest
         disclosed = perception.disclosed_cell(result.new_pos, opp_true, self.radius,
-                                              self.exact, self.deception, game.board, self.rng)
+                                              self.exact, deceiving, game.board, self.rng)
         message = agent.voice(obs, move, disclosed)
         perception.relay(opponent, result.new_pos, opp_true, self.radius, message)
 

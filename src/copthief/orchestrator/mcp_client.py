@@ -69,8 +69,7 @@ class NetworkMatch:
 
         agent.perceive(game.position_of(role), opp_true, self.radius)
         obs = observe(game, role, message)
-        target = agent.belief or perception.center(game.board)
-        move = agent.decide(obs, game.board, fallback_opponent=target)
+        move = agent.decide(obs, game.board)
         result = game.apply(move)               # client is the authoritative referee
         await self._execute(role, move)         # server executes the same action
 

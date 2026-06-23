@@ -46,8 +46,14 @@ def relay(opponent: Agent, mover_pos: Position, opponent_true: Position, radius:
 
 
 def _decoy(board: Board, rng: random.Random, true_pos: Position) -> Position:
-    """Pick a random in-bounds cell other than the true one (a believable lie)."""
-    cells = [Position(x, y)
+    """The thief's strongest lie: claim the mirror-image cell across the board centre —
+    the far corner from its true position, maximising how far it lures the pursuer away
+    before the pursuer reaches the empty cell and realises it was deceived."""
+    mirror = Position(2 * board.origin + board.width - 1 - true_pos.x,
+                      2 * board.origin + board.height - 1 - true_pos.y)
+    if mirror != true_pos:
+        return mirror
+    cells = [Position(x, y)  # the centre mirrors to itself: fall back to any other cell
              for x in range(board.origin, board.origin + board.width)
              for y in range(board.origin, board.origin + board.height)
              if Position(x, y) != true_pos]
