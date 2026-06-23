@@ -95,9 +95,9 @@ stated cell as one unverified lead and, on reaching it to find nobody, concludes
 deceived and ignores that liar's claims for the rest of the subgame. **This shapes play:** when blind, the cop must actively
 **search** (head to the thief's last-seen cell, then sweep the corners) while the thief
 **evades** toward open, central cells. On a small 5×5 a competent hunting cop reliably
-re-acquires and corners the thief, so the outcome there is **cop-dominated**; the game
-**balances on larger boards** (board-size sensitivity in §9), because more space lets the
-thief keep its distance under partial observation. (`exact` reproduces full observability
+re-acquires and corners the thief, so the outcome there is **cop-dominated** (the intended
+5×5 game); it **would balance only on a larger board** (board-size sensitivity study in §9),
+because more space lets the thief keep its distance under partial observation. (`exact` reproduces full observability
 for the deterministic pipeline demo.)
 
 **Negotiating the radius (inter-group):** because the radius strongly favours one side,
@@ -177,10 +177,12 @@ The cop's active search makes pursuit **board-size sensitive** under `vision_rad
 |-------|-----|-----|-----|-----|-----|
 | **Cop win %** | 93 | 82 | 72 | 57 | 47 |
 
-A hunting cop dominates small boards; the game **balances around 8×8**, where more space
-lets the thief keep its distance under partial observation. The PDF default `5×5` is thus
-cop-favored — set `grid_size: [8, 8]` for a balanced competitive match. This doubles as the
-§4.5 staged sanity sweep (2×2 → 5×5 and beyond), reproducible in `notebooks/analysis.ipynb`.
+A hunting cop dominates small boards and would only balance on a much larger one. This is a
+**sensitivity study, not the board we play on**: per PDF §4.5, `2×2 → 4×4` are graduated
+integration/sanity stages and **`5×5` is the final stage and the actual game** (the §4.2/§10
+default), where the cop is favored. A larger board is only ever an **optional inter-group
+enhancement by mutual agreement** (§12) — never the standard. Reproducible in
+`notebooks/analysis.ipynb`.
 
 **Visualisation.** Three complementary views: a **real-time ASCII board** printed every
 turn during play (`copthief selfplay --verbose` / the demo capture), a final-state PNG, and

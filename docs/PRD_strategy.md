@@ -38,8 +38,8 @@ radius). In the self-game this is disabled — the base rules are followed exact
 - **Rationale:** deterministic, debuggable, zero-cost. The cornering tie-break plus the
   blind-search **hunt** make the cop a competent pursuer that reliably captures on small
   boards. As the board grows the thief's evasion holds, so the **cop-win rate falls with
-  board size** (balances ~8×8; see REPORT §9). **Limitation:** still one-step greedy with
-  no multi-turn planning.
+  board size** (a sensitivity study — the actual game stays 5×5; see REPORT §9).
+  **Limitation:** still one-step greedy with no multi-turn planning.
 
 ## 3. Strategy B — Tabular Q-learning (optional)
 

@@ -2,7 +2,8 @@
 version: "1.0.0"
 
 game:
-  grid_size: [5, 5]      # [width, height]; supports any size for sanity checks (2x2 .. 5x5)
+  grid_size: [5, 5]      # the 5x5 game board (PDF 4.2/10 default); resize only for the
+                         # 4.5 sanity stages (2x2..4x4) or an agreed inter-group bonus game
   max_moves: 25          # max moves per subgame before the thief survives
   num_games: 6           # subgames per full game (3 as cop + 3 as thief in inter-group play)
   max_barriers: 5        # max barriers the cop may place per subgame
