@@ -1,9 +1,9 @@
 """Generate demo artifacts: run a self-game, then render boards + a transcript.
 
 Writes to assets/:
-  * board.png            - final board snapshot (single frame)
-  * demo_filmstrip.png   - every move of the last subgame as a montage
-  * demo_transcript.md   - the agents' natural-language dialogue, move by move
+  * board.png                 - final board snapshot (single frame)
+  * demo_filmstrip_sg{N}.png  - every move of subgame N as a montage (one per subgame)
+  * demo_transcript.md        - the agents' natural-language dialogue, move by move
 
 Usage:  uv run python scripts/capture_demo.py [--seed N]
 """
@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 from copthief.gui.live import render_live
-from copthief.gui.sequence import render_frames
+from copthief.gui.sequence import render_all_subgames
 from copthief.gui.viewer import render_audit
 from copthief.sdk import CopThiefSDK
 
@@ -48,7 +48,7 @@ def _write_transcript(audit_path: Path, out_dir: Path) -> Path:
 def main() -> int:
     """Run a seeded self-game and render the snapshot + filmstrip artifacts."""
     parser = argparse.ArgumentParser(description="Capture CopThief demo screenshots")
-    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--seed", type=int, default=3)
     parser.add_argument("--games", type=int, default=None,
                         help="override subgame count (e.g. 2 for a short demo)")
     parser.add_argument("--quiet", action="store_true", help="suppress live dialogue output")
@@ -64,11 +64,12 @@ def main() -> int:
 
     root = sdk.config.root
     snapshot = render_audit(sdk.audit.path, root)
-    filmstrip = render_frames(sdk.audit.path, root)
+    filmstrips = render_all_subgames(sdk.audit.path, root)
     transcript = _write_transcript(sdk.audit.path, root / "assets")
     print(f"totals: {match['totals']}")
     print(f"snapshot:   {snapshot}")
-    print(f"filmstrip:  {filmstrip}")
+    for film in filmstrips:
+        print(f"filmstrip:  {film}")
     print(f"transcript: {transcript}")
     return 0
 

@@ -29,7 +29,8 @@ def _grid(root: Path) -> tuple[int, int, int]:
     return int(width), int(height), int(game.get("origin", 1))
 
 
-def render_frames(audit_path: Path, root: Path, index: int | None = None) -> Path | None:
+def render_frames(audit_path: Path, root: Path, index: int | None = None,
+                  out_name: str = "demo_filmstrip.png") -> Path | None:
     """Render a montage of every move in one subgame; return the montage path."""
     turns = _turns_for_subgame(audit_path, index)
     if not turns:
@@ -51,9 +52,25 @@ def render_frames(audit_path: Path, root: Path, index: int | None = None) -> Pat
 
     out_dir = root / "assets"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "demo_filmstrip.png"
+    out_path = out_dir / out_name
     fig.suptitle(f"CopThief subgame {turns[0]['index']} — move-by-move", fontsize=12)
     fig.tight_layout()
     fig.savefig(out_path, dpi=110, bbox_inches="tight")
     plt.close(fig)
     return out_path
+
+
+def _subgame_indices(audit_path: Path) -> list[int]:
+    """Return the ordered subgame indices recorded in the audit log."""
+    entries = [json.loads(x) for x in audit_path.read_text(encoding="utf-8").splitlines()]
+    return sorted({e["index"] for e in entries if e.get("event") == "turn"})
+
+
+def render_all_subgames(audit_path: Path, root: Path) -> list[Path]:
+    """Render one filmstrip per subgame (the whole game each); return the montage paths."""
+    paths: list[Path] = []
+    for idx in _subgame_indices(audit_path):
+        out = render_frames(audit_path, root, index=idx, out_name=f"demo_filmstrip_sg{idx}.png")
+        if out is not None:
+            paths.append(out)
+    return paths
