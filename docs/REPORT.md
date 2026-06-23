@@ -180,10 +180,11 @@ Every external LLM (and Gmail) call routes through the central **API gatekeeper*
 (rate-limit + retry, config-driven) and a **usage meter** (`shared/usage.py`) that
 estimates input/output tokens (~4 chars/token) and USD cost from a configurable per-model
 price table. After each game a `results/usage_<ts>.json` is written with the per-model
-breakdown and totals. Because messages are short (one–two sentences), token use is minimal:
-on the Claude **CLI** subscription self-games are effectively **free**; the Anthropic-API
-fallback (Opus) costs only a few cents per full 6-subgame game. The meter makes the cost of
-any future cloud-API run measurable and reportable without code changes.
+breakdown and totals. `est_usd` prices tokens at **API rates**, so it is the actual cost
+when the Anthropic-API path is used and the **API-equivalent** cost (i.e. the amount saved)
+when the free Claude-CLI subscription serves the call. Because messages are short (one–two
+sentences) token use is minimal: a full 6-subgame Opus game is only a few cents on the API
+and **free** on the CLI subscription — and the meter reports the exact figure per run.
 
 ## 11. Quality & engineering
 

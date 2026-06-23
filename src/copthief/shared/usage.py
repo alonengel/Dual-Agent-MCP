@@ -12,8 +12,11 @@ from dataclasses import dataclass, field
 # Rough chars-per-token ratio; accurate enough for cost estimation across vendors.
 _CHARS_PER_TOKEN = 4
 # Default USD price per 1M tokens as (input, output). Overridable via config.
+# Keyed by the model name providers record (Claude resolves its alias to "opus").
 _PRICING: dict[str, tuple[float, float]] = {
+    "opus": (15.0, 75.0),
     "claude-opus-4-8": (15.0, 75.0),
+    "sonnet": (3.0, 15.0),
     "gpt-4o": (2.5, 10.0),
     "default": (0.0, 0.0),
 }

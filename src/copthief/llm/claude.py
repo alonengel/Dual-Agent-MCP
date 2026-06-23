@@ -27,6 +27,10 @@ class ClaudeProvider(LLMProvider):
 
     def __init__(self, model: str = "claude", temperature: float = 0.4,
                  max_tokens: int = 512, timeout: int = 120):
+        # A non-Claude model (e.g. the config's Ollama default) resolves to the latest
+        # Opus alias, so usage/cost accounting reflects the model actually billed.
+        if not (model.startswith("claude") or model in _ALIASES):
+            model = _DEFAULT_CLI_MODEL
         super().__init__(model, temperature, max_tokens)
         self.timeout = timeout
         # An empty CLAUDE_CLI_PATH (e.g. blank in .env) must fall back to "claude".
