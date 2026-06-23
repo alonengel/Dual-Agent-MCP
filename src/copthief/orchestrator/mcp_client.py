@@ -11,15 +11,13 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from fastmcp import Client
-from fastmcp.client.auth import BearerAuth
-
 from copthief.constants import Action, Outcome, Role
 from copthief.domain.scoring import ScoreBook
 from copthief.llm.factory import build_provider
 from copthief.orchestrator import negotiation, perception
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.match import opponent_position
+from copthief.orchestrator.mcp_transport import PersistentMcpSession
 from copthief.orchestrator.setup import build_subgame, observe
 from copthief.shared.config import Config
 from copthief.shared.logger import AuditLog
@@ -36,6 +34,7 @@ class NetworkMatch:
         self.token = os.environ.get("COPTHIEF_MCP_TOKEN", "")
         self.scorebook = ScoreBook(config.section("scoring"))
         self.urls = {Role.COP: self.mcp.get("cop_url"), Role.THIEF: self.mcp.get("thief_url")}
+        self._session: PersistentMcpSession | None = None
         self.agents = {r: Agent(r, build_strategy(config.section("strategy")),
                                 build_provider(config.section("llm"))) for r in Role}
         game = config.section("game")
@@ -44,11 +43,8 @@ class NetworkMatch:
         self.deception = bool(game.get("deception", False))
 
     async def _call(self, role: Role, tool: str, args: dict[str, Any]) -> Any:
-        """Invoke a tool on the given agent's MCP server (bearer-authed)."""
-        auth = BearerAuth(self.token) if self.token else None
-        async with Client(self.urls[role], auth=auth) as client:
-            result = await client.call_tool(tool, args)
-        return result.data
+        assert self._session is not None
+        return await self._session.call(role, tool, args)
 
     async def _execute(self, role: Role, move) -> None:
         """Mirror a validated move onto the agent's remote server state."""
@@ -113,15 +109,18 @@ class NetworkMatch:
                 return await self._run_subgame(index, rng)
             except Exception as exc:  # noqa: BLE001 - a failed subgame is void; retry it
                 self.audit.record("technical_loss", index=index, attempt=attempt,
-                                  error=str(exc))
+                                  error=str(exc) or type(exc).__name__)
         raise RuntimeError(f"subgame {index} failed after {max_attempts} attempts")
 
     async def run(self, rng) -> dict[str, Any]:
-        """Play all subgames against the remote servers and aggregate scores."""
+        """Play all subgames over persistent per-server connections and aggregate."""
         self.rng = rng
-        await self._negotiate()
-        results = [await self._valid_subgame(i, rng)
-                   for i in range(1, int(self.config.get("game.num_games", 6)) + 1)]
+        async with PersistentMcpSession(self.urls, self.token) as session:
+            self._session = session
+            await self._negotiate()
+            results = [await self._valid_subgame(i, rng)
+                       for i in range(1, int(self.config.get("game.num_games", 6)) + 1)]
+        self._session = None
         totals = self.scorebook.totals(results)
         self.audit.record("match_complete_net", totals=totals)
         return {"sub_games": [r.to_dict() for r in results], "totals": totals}
