@@ -31,7 +31,7 @@ class ApiProvider(LLMProvider):
         if not self.api_key:
             raise ValueError(f"missing API key env var for provider '{self.kind}'")
 
-    def complete(self, system: str, user: str) -> str:
+    def _complete(self, system: str, user: str) -> str:
         """Route to the correct vendor request/response format."""
         if self.kind == "anthropic":
             return self._anthropic(system, user)

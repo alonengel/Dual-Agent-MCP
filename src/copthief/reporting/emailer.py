@@ -13,6 +13,10 @@ import logging
 import os
 from email.mime.text import MIMEText
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from copthief.shared.gatekeeper import ApiGatekeeper
 
 _log = logging.getLogger("copthief.email")
 # Matches the course Gmail-API guide: gmail.modify covers sending/drafting.
@@ -40,8 +44,13 @@ def _load_credentials():
     return creds
 
 
-def send_report_email(to_addr: str, subject: str, body_json: dict) -> bool:
-    """Send the JSON report via Gmail. Returns False (no raise) on missing setup."""
+def send_report_email(to_addr: str, subject: str, body_json: dict,
+                      gate: ApiGatekeeper | None = None) -> bool:
+    """Send the JSON report via Gmail. Returns False (no raise) on missing setup.
+
+    The Gmail API call is routed through the shared gatekeeper when provided, so
+    this external call obeys the same throttle/retry policy as the LLM calls.
+    """
     try:
         from googleapiclient.discovery import build
 
@@ -51,7 +60,14 @@ def send_report_email(to_addr: str, subject: str, body_json: dict) -> bool:
         message["to"] = to_addr
         message["subject"] = subject
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        service.users().messages().send(userId="me", body={"raw": raw}).execute()
+
+        def _send() -> None:
+            service.users().messages().send(userId="me", body={"raw": raw}).execute()
+
+        if gate is not None:
+            gate.execute(_send)
+        else:
+            _send()
         _log.info("report email sent to %s", to_addr)
         return True
     except Exception as exc:  # noqa: BLE001 - email must never crash the pipeline

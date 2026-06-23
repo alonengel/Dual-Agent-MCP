@@ -13,7 +13,7 @@ from typing import Any
 
 from copthief.constants import Action, Outcome, Role
 from copthief.domain.scoring import ScoreBook
-from copthief.llm.factory import build_provider
+from copthief.llm.factory import build_llm_clients, build_provider
 from copthief.orchestrator import negotiation, perception
 from copthief.orchestrator.agent import Agent
 from copthief.orchestrator.match import opponent_position
@@ -38,8 +38,10 @@ class NetworkMatch:
             Role.THIEF: os.environ.get("COPTHIEF_THIEF_URL") or self.mcp.get("thief_url"),
         }
         self._session: PersistentMcpSession | None = None
+        self.gate, self.meter = build_llm_clients(config)
         self.agents = {r: Agent(r, build_strategy(config.section("strategy")),
-                                build_provider(config.section("llm"))) for r in Role}
+                                build_provider(config.section("llm"), self.gate, self.meter))
+                       for r in Role}
         game = config.section("game")
         self.radius, self.radius_mode = negotiation.negotiated_radius(game)
         self.exact = str(game.get("disclosure", "exact")).lower() == "exact"

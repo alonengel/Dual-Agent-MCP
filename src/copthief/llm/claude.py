@@ -32,7 +32,7 @@ class ClaudeProvider(LLMProvider):
         # An empty CLAUDE_CLI_PATH (e.g. blank in .env) must fall back to "claude".
         self._cli = shutil.which(os.environ.get("CLAUDE_CLI_PATH") or "claude")
 
-    def complete(self, system: str, user: str) -> str:
+    def _complete(self, system: str, user: str) -> str:
         """Return Claude's reply, preferring the CLI and falling back to the API."""
         if self._cli:
             try:

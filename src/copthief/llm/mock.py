@@ -20,7 +20,7 @@ class MockProvider(LLMProvider):
     def __init__(self, model: str = "mock", temperature: float = 0.0, max_tokens: int = 256):
         super().__init__(model, temperature, max_tokens)
 
-    def complete(self, system: str, user: str) -> str:
+    def _complete(self, system: str, user: str) -> str:
         """Echo a natural-language sentence built from the embedded directive."""
         directive = self._extract(user, "DIRECTIVE:")
         role = self._extract(user, "ROLE:") or "agent"

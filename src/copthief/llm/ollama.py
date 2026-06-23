@@ -17,7 +17,7 @@ class OllamaProvider(LLMProvider):
         super().__init__(model, temperature, max_tokens)
         self.base_url = base_url or os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 
-    def complete(self, system: str, user: str) -> str:
+    def _complete(self, system: str, user: str) -> str:
         """Send a chat request to Ollama and return the assistant content."""
         payload = {
             "model": self.model,
