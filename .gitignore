@@ -5,6 +5,7 @@
 credentials.json
 token.json
 client_secret*.json
+ngrok.yml
 
 # Python
 __pycache__/
