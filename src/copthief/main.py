@@ -8,6 +8,7 @@ Subcommands:
 from __future__ import annotations
 
 import argparse
+import functools
 import sys
 
 from copthief.constants import Role
@@ -20,7 +21,7 @@ def _email_report(sdk, path, subject: str) -> None:
     from copthief.reporting.emailer import send_report_email
 
     report = json.loads(path.read_text(encoding="utf-8"))
-    send_report_email(sdk.config.get("reporting.email_to", ""), subject, report)
+    send_report_email(sdk.config.get("reporting.email_to", ""), subject, report, gate=sdk.gate)
 
 
 def _selfplay(args: argparse.Namespace) -> int:
@@ -28,7 +29,13 @@ def _selfplay(args: argparse.Namespace) -> int:
     from copthief.sdk import CopThiefSDK
 
     sdk = CopThiefSDK(seed=args.seed)
-    match = sdk.run_self_play()
+    reporter = functools.partial(print, flush=True) if args.verbose else None
+    board = None
+    if args.verbose:
+        from copthief.gui.live import render_live
+
+        board = render_live
+    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
     path = sdk.report_and_save(match)
     print(f"Totals: {match['totals']}\nReport: {path}")
 
@@ -79,6 +86,8 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--seed", type=int, default=None, help="RNG seed for reproducibility")
     play.add_argument("--gui", action="store_true", help="render the board from the audit log")
     play.add_argument("--email", action="store_true", help="email the JSON report via Gmail")
+    play.add_argument("--games", type=int, default=None, help="override subgame count (demo)")
+    play.add_argument("--verbose", action="store_true", help="print agent dialogue live")
     play.set_defaults(func=_selfplay)
 
     net = sub.add_parser("netplay", help="run a match against running MCP servers")
