@@ -1,0 +1,65 @@
+{
+  "group_name": "anrbj666",
+  "students": [
+    {
+      "name": "Alon Engel",
+      "id": "<redacted>"
+    },
+    {
+      "name": "Renat Karimov",
+      "id": "<redacted>"
+    }
+  ],
+  "github_repo": "https://github.com/alonengel/Dual-Agent-MCP",
+  "cop_mcp_url": "https://mcp.alon.website/cop/mcp",
+  "thief_mcp_url": "https://mcp.alon.website/thief/mcp",
+  "timezone": "Asia/Jerusalem",
+  "sub_games": [
+    {
+      "index": 1,
+      "outcome": "cop_win",
+      "moves_played": 1,
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 2,
+      "outcome": "thief_win",
+      "moves_played": 25,
+      "cop_score": 5,
+      "thief_score": 10
+    },
+    {
+      "index": 3,
+      "outcome": "cop_win",
+      "moves_played": 1,
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 4,
+      "outcome": "cop_win",
+      "moves_played": 1,
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 5,
+      "outcome": "cop_win",
+      "moves_played": 13,
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 6,
+      "outcome": "cop_win",
+      "moves_played": 10,
+      "cop_score": 20,
+      "thief_score": 5
+    }
+  ],
+  "totals": {
+    "cop": 105,
+    "thief": 35
+  }
+}

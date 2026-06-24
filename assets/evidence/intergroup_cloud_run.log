@@ -1,0 +1,59 @@
+[series] provider=claude board=8x8 rounds=7 seed=<redacted> schedule=['thief', 'thief', 'thief', 'cop', 'cop', 'cop']
+[ply] sg0 thief SEND -> You'll have to be quicker than that, officer—I'm already drifting east
+[deliver] correspondence-laden-introductory-rep.trycloudflare.com -> ok in 2.0s
+[ply] sg0 thief RECV <- MOVE:[2,7] | COMMIT:1f9bf5fca841e201507da8064679c407be0456e93db9cc442e
+[ply] sg1 thief SEND -> Nice try, but I'm already drifting north and you won't see me go. || M
+[deliver] correspondence-laden-introductory-rep.trycloudflare.com -> ok in 0.5s
+[ply] sg1 thief RECV <- MOVE:[5,0] | COMMIT:a1fd979a36ad3ef7a1499981981fde7c200362f76877b68c7d
+[ply] sg2 thief SEND -> Nice try, copper, but I'm already drifting east where your eyes can't 
+[deliver] correspondence-laden-introductory-rep.trycloudflare.com -> ok in 0.5s
+[ply] sg2 thief RECV <- MOVE:[7,4] | COMMIT:b8d7d596f89f0b526beff5e1a80a8c3a9bcaa2b5047decb4df
+[ply] sg3 cop RECV <- MOVE:[0,4] | COMMIT:3f48bad3a0d81a9d07e20fd078cfb00393b3188ffb8bfdba99
+[ply] sg3 cop SEND -> Nice try slipping away, but I'm sliding west and tightening the net ar
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.4s
+[ply] sg3 cop RECV <- MOVE:[1,3] | COMMIT:6de523a177cf1b18499f72d07b6ee7044da1b7117d83f2eade
+[ply] sg3 cop SEND -> I hear you scurrying, but I'm sliding west to close the gap—there's no
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg3 cop RECV <- MOVE:[0,4] | COMMIT:022ee42710c6e5b554e67b1d284a42a3dd6af34a84e1b762c4
+[ply] sg3 cop SEND -> "I hear you scrambling, little thief, and I'm climbing steadily northw
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg3 cop RECV <- MOVE:[0,5] | COMMIT:7992305dc2a0b90bd96961d1c769f0469d099342e1f4a23d2e
+[ply] sg3 cop SEND -> Nice try slipping away, but I'm climbing north right behind you and th
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.1s
+[ply] sg4 cop RECV <- MOVE:[6,2] | COMMIT:18ca4acc38a74e33623ae7aab4477e504be8a8e36c776d2171
+[ply] sg4 cop SEND -> Heard you, little thief—I'm sliding north and tightening the net, so e
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg4 cop RECV <- MOVE:[6,3] | COMMIT:9b9beb8ca5da7f712ea96470c02a8a1a795ce3c0d180596c7a
+[ply] sg4 cop SEND -> Heard you—I'm closing the gap from below, drifting steadily northward 
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg4 cop RECV <- MOVE:[7,4] | COMMIT:5a1690d11a4a217678703e93dabfd0cb76e880d3ce1deaf5fb
+[ply] sg4 cop SEND -> Heard you—I'm closing the gap and heading straight north, so there's n
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg4 cop RECV <- MOVE:[6,4] | COMMIT:65eb18c8d7299710068636ae197d77b1ecf0f57cd95c1a1b03
+[ply] sg4 cop SEND -> Heard you—I'm sliding one step east and tightening the gap, so keep ru
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 0.9s
+[ply] sg4 cop RECV <- MOVE:[7,5] | COMMIT:3ffcd5cd019e5b582e968aa629f6af01cf8652add550a149d6
+[ply] sg4 cop SEND -> Heard your little boast, but I'm sliding north and the gap between us 
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg4 cop RECV <- MOVE:[7,4] | COMMIT:695717d6799b96796f92078080f4ff00552ab427be19be9e31
+[ply] sg4 cop SEND -> Steady now—I can feel you slipping ahead, so I'm pressing northward an
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.2s
+[ply] sg4 cop RECV <- MOVE:[6,5] | COMMIT:4db0fc2e6252c683cbb2bcf3b996682dc158d736f1afa0651c
+[ply] sg4 cop SEND -> Heard you scurrying east, but I'm sliding one step closer in the same 
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 1.0s
+[ply] sg5 cop RECV <- MOVE:[2,5] | COMMIT:ca36b65e15872f2b5f50700cab4a00fe52ec097703a544056c
+[ply] sg5 cop SEND -> "Heard you scurrying off, little thief—I'm closing in from the upper c
+[deliver] rebound-adoption-proceeds-membrane.trycloudflare.com -> ok in 0.9s
+[series] sub-game 0: we=thief -> cop_win (1 rounds)
+[series] sub-game 1: we=thief -> cop_win (1 rounds)
+[series] sub-game 2: we=thief -> cop_win (1 rounds)
+[series] sub-game 3: we=cop -> cop_win (4 rounds)
+[series] sub-game 4: we=cop -> thief_win (7 rounds)
+[series] sub-game 5: we=cop -> cop_win (1 rounds)
+
+[series] totals_by_group={'anrbj666': 60, 'ImreEyal': 80}
+[series] report saved: C:\Users\Alon\Desktop\ex6\results\bonus_game_20260624_203139.json
+[series] OUR REPORT SHA-256: c5ad67762cf40dc629c0d8f7474abcb18db717e82a59775509426f702a264e1d
+[deliver] correspondence-laden-introductory-rep.trycloudflare.com -> ok in 0.6s
+[series] HASHES MATCH (c5ad67762cf4...) -> emailing report to rmisegal+uoh26b@gmail.com
+[series] email sent

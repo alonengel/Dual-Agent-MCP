@@ -1,0 +1,69 @@
+{
+  "report_type": "bonus_game",
+  "groups": {
+    "group_1": "ImreEyal",
+    "group_2": "anrbj666"
+  },
+  "github_repo_group_1": "https://github.com/Imreec/mcp-cop-thief",
+  "github_repo_group_2": "https://github.com/alonengel/Dual-Agent-MCP",
+  "mcp_url_group_1_cop": "https://correspondence-laden-introductory-rep.trycloudflare.com/mcp",
+  "mcp_url_group_1_thief": "https://rebound-adoption-proceeds-membrane.trycloudflare.com/mcp",
+  "mcp_url_group_2_cop": "https://mcp.alon.website/cop/mcp",
+  "mcp_url_group_2_thief": "https://mcp.alon.website/thief/mcp",
+  "timezone": "Asia/Jerusalem",
+  "students_group_1": [
+    "Imree Cohen",
+    "Eyal Shtinmetz"
+  ],
+  "students_group_2": [
+    "Alon Engel",
+    "Renat Karimov"
+  ],
+  "sub_games": [
+    {
+      "index": 0,
+      "winner": "cop",
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 1,
+      "winner": "cop",
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 2,
+      "winner": "cop",
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 3,
+      "winner": "cop",
+      "cop_score": 20,
+      "thief_score": 5
+    },
+    {
+      "index": 4,
+      "winner": "thief",
+      "cop_score": 5,
+      "thief_score": 10
+    },
+    {
+      "index": 5,
+      "winner": "cop",
+      "cop_score": 20,
+      "thief_score": 5
+    }
+  ],
+  "totals_by_group": {
+    "anrbj666": 60,
+    "ImreEyal": 80
+  },
+  "bonus_claim": {
+    "ImreEyal": 10,
+    "anrbj666": 7
+  },
+  "mutual_agreement": true
+}
