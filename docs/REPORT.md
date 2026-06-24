@@ -215,7 +215,7 @@ subgame is **≈ $0.08** and a full 6-subgame game is **well under $1** on the A
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **114 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **116 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config validated on startup.
 - **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
