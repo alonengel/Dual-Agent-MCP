@@ -5,6 +5,7 @@ from __future__ import annotations
 from copthief.constants import Role
 from copthief.domain.board import Board
 from copthief.domain.models import Observation, Position
+from copthief.llm.base import LLMProvider
 from copthief.llm.mock import MockProvider
 from copthief.orchestrator.agent import Agent
 from copthief.strategy.heuristic import HeuristicStrategy
@@ -12,6 +13,40 @@ from copthief.strategy.heuristic import HeuristicStrategy
 
 def _agent(role: Role) -> Agent:
     return Agent(role, HeuristicStrategy(), MockProvider())
+
+
+class _CellProvider(LLMProvider):
+    """A provider whose reply names a specific cell — emulates an LLM choosing its move."""
+
+    def __init__(self, cell: tuple[int, int]):
+        super().__init__("cell", 0.0, 16)
+        self._cell = cell
+
+    def _complete(self, system: str, user: str) -> str:
+        return f"I slip to ({self._cell[0]},{self._cell[1]})."
+
+
+def test_decide_is_llm_driven_when_proposal_is_legal(board: Board) -> None:
+    cop = Agent(Role.COP, HeuristicStrategy(), _CellProvider((2, 1)))  # a legal neighbour of (1,1)
+    cop.belief = Position(5, 5)
+    move = cop.decide(Observation(Role.COP, Position(1, 1), 0, 25, 5), board)
+    assert cop.last_source == "llm" and (move.dx, move.dy) == (1, 0)  # the LLM's pick (2,1)
+
+
+def test_decide_falls_back_to_strategy_without_legal_proposal(board: Board) -> None:
+    cop = _agent(Role.COP)  # MockProvider gives no coordinate -> strategy decides
+    cop.belief = Position(5, 5)
+    move = cop.decide(Observation(Role.COP, Position(1, 1), 0, 25, 5), board)
+    assert cop.last_source == "fallback" and (move.dx, move.dy) == (1, 1)  # strategy toward (5,5)
+
+
+def test_decide_uses_strategy_when_llm_moves_disabled(board: Board) -> None:
+    # Even though the provider would propose a (legal) cell, llm_moves=False bypasses the LLM
+    # entirely so the strategy decides the move (the inter-group competitive configuration).
+    cop = Agent(Role.COP, HeuristicStrategy(), _CellProvider((2, 1)), llm_moves=False)
+    cop.belief = Position(5, 5)
+    move = cop.decide(Observation(Role.COP, Position(1, 1), 0, 25, 5), board)
+    assert cop.last_source == "strategy" and (move.dx, move.dy) == (1, 1)  # strategy toward (5,5)
 
 
 def test_belief_updates_from_message() -> None:

@@ -8,7 +8,7 @@ where the thief was last seen and then sweeps the corners to flush it out.
 
 from __future__ import annotations
 
-from copthief.constants import Role
+from copthief.constants import Action, Role
 from copthief.domain.board import Board
 from copthief.domain.models import Move, Observation, Position
 from copthief.llm.base import LLMProvider
@@ -19,16 +19,22 @@ from copthief.strategy.base import Strategy, chebyshev
 class Agent:
     """Wraps one side's decision-making and natural-language communication."""
 
-    def __init__(self, role: Role, strategy: Strategy, provider: LLMProvider):
+    def __init__(self, role: Role, strategy: Strategy, provider: LLMProvider,
+                 llm_moves: bool = True):
         self.role = role
         self.strategy = strategy
         self.provider = provider
+        # The LLM proposes moves by default (genuine agency for the graded self-game). The
+        # competitive inter-group run sets this False: the strategy decides moves (stronger,
+        # faster, never self-captures) while the LLM still voices every turn in free text.
+        self.llm_moves = llm_moves
         self.skeptical = False  # a counter-intelligence cop that distrusts proven lies
         self.belief: Position | None = None
         self.belief_trusted = False  # True only when the belief came from direct sight
         self.trust_claims = True     # cleared once a stated position is exposed as a lie
         self.last_seen: Position | None = None  # cop: last cell the thief was seen in
         self._patrol = 0                         # cop: index into the corner sweep
+        self.last_source = "fallback"            # provenance of the last move: "llm" | "fallback"
 
     def reset(self) -> None:
         """Forget all per-subgame state so each subgame starts from a clean slate."""
@@ -70,7 +76,19 @@ class Agent:
         return False
 
     def decide(self, obs: Observation, board: Board) -> Move:
-        """Choose a move aimed at the belief, or an active search target when blind."""
+        """Choose a move. With ``llm_moves`` (default) the LLM proposes one from the legal
+        neighbours (genuine agency) and the strategy is the legal fallback; with it off the
+        strategy decides directly. ``last_source`` records the provenance ("llm"/"fallback"/
+        "strategy") as audit evidence of how the move was chosen."""
+        if self.llm_moves:
+            chosen = dialogue.propose_move(self.provider, obs, board, self.belief)
+            if chosen is not None:
+                self.last_source = "llm"
+                return Move(self.role, Action.MOVE,
+                            chosen.x - obs.self_pos.x, chosen.y - obs.self_pos.y)
+            self.last_source = "fallback"
+        else:
+            self.last_source = "strategy"
         return self.strategy.decide(obs, self._target(obs.self_pos, board), board)
 
     def _target(self, here: Position, board: Board) -> Position:

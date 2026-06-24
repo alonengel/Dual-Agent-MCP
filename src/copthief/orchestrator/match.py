@@ -103,7 +103,7 @@ class MatchRunner:
         self.audit.record(
             "turn", index=index, move=game.move_number, role=role.value,
             action=move.action.value, legal=result.legal, reason=result.reason,
-            visible=visible, revealed=disclosed is not None,
+            source=agent.last_source, visible=visible, revealed=disclosed is not None,
             cop=game.cop.as_tuple(), thief=game.thief.as_tuple(), message=message,
         )
         self._say(f"  {role.value} m{game.move_number}: {message}")

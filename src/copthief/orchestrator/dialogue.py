@@ -10,11 +10,35 @@ from __future__ import annotations
 import re
 
 from copthief.constants import Action, Role
+from copthief.domain.board import Board
 from copthief.domain.models import Move, Observation, Position
 from copthief.llm.base import LLMProvider
 from copthief.llm.prompts import system_for
 
 _COORD = re.compile(r"\(?\s*(\d+)\s*[,; ]\s*(\d+)\s*\)?")
+
+
+def propose_move(provider: LLMProvider, obs: Observation, board: Board,
+                 opponent: Position | None) -> Position | None:
+    """Let the LLM *choose* the next cell from the legal neighbours (genuine LLM-driven play).
+
+    Returns the chosen Position, or ``None`` if the reply isn't one of the legal cells — the
+    caller then falls back to the strategy, so the move is LLM-decided yet always legal."""
+    cells = board.free_neighbours(obs.self_pos)
+    if not cells:
+        return None
+    options = ", ".join(f"({c.x},{c.y})" for c in cells)
+    if opponent is not None:
+        who = "thief" if obs.role is Role.COP else "cop"
+        where = f"the {who} is believed at ({opponent.x},{opponent.y})"
+    else:
+        where = "the opponent's location is unknown"
+    goal = "close in to capture the thief" if obs.role is Role.COP else "flee to avoid capture"
+    user = (f"ROLE: {obs.role.value}\nYou are at ({obs.self_pos.x},{obs.self_pos.y}); {where}. "
+            f"Legal cells to move to: {options}. Goal: {goal}. "
+            f"Reply with EXACTLY one of those cells as (x,y).")
+    chosen = parse_position(provider.complete(system_for(obs.role), user))
+    return chosen if chosen in cells else None
 
 
 def announce(provider: LLMProvider, obs: Observation, move: Move,

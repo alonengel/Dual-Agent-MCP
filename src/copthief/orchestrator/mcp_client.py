@@ -80,7 +80,7 @@ class NetworkMatch:
         await self._call(Role.THIEF if role is Role.COP else Role.COP, "note",
                          {"message": msg})
         self.audit.record("turn_net", index=index, role=role.value,
-                          action=move.action.value, legal=result.legal,
+                          action=move.action.value, legal=result.legal, source=agent.last_source,
                           cop=game.cop.as_tuple(), thief=game.thief.as_tuple(), message=msg)
         return msg
 
