@@ -35,6 +35,21 @@ def _bonus_claim(names: list[str], totals: dict[str, int],
             b: ScoreBook.bonus_points(totals[b], totals[a], bonus)}
 
 
+def _student_names(students: list[Any]) -> list[str]:
+    """Inter-group reports list students by name only (agreed shared schema)."""
+    return [s["name"] if isinstance(s, dict) else s for s in students]
+
+
+def _bonus_subgames(sub_games: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalise sub-game entries to the agreed inter-group schema (index, winner, scores)."""
+    out = []
+    for s in sub_games:
+        winner = s.get("winner") or str(s.get("outcome", "")).replace("_win", "")
+        out.append({"index": s.get("index"), "winner": winner,
+                    "cop_score": s.get("cop_score"), "thief_score": s.get("thief_score")})
+    return out
+
+
 def build_bonus_report(group_1: dict[str, Any], group_2: dict[str, Any],
                        match: dict[str, Any], agreement: bool = True,
                        bonus: dict[str, int] | None = None) -> dict[str, Any]:
@@ -51,9 +66,9 @@ def build_bonus_report(group_1: dict[str, Any], group_2: dict[str, Any],
         "mcp_url_group_2_cop": group_2.get("cop_url", ""),
         "mcp_url_group_2_thief": group_2.get("thief_url", ""),
         "timezone": "Asia/Jerusalem",
-        "students_group_1": group_1.get("students", []),
-        "students_group_2": group_2.get("students", []),
-        "sub_games": match.get("sub_games", []),
+        "students_group_1": _student_names(group_1.get("students", [])),
+        "students_group_2": _student_names(group_2.get("students", [])),
+        "sub_games": _bonus_subgames(match.get("sub_games", [])),
         "totals_by_group": totals,
         "bonus_claim": _bonus_claim(names, totals, bonus or {"win": 10, "lose": 7, "tie": 5}),
         "mutual_agreement": agreement,

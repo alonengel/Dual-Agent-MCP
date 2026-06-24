@@ -56,7 +56,11 @@ def send_report_email(to_addr: str, subject: str, body_json: dict,
 
         creds = _load_credentials()
         service = build("gmail", "v1", credentials=creds)
-        message = MIMEText(json.dumps(body_json, ensure_ascii=False), "plain", "utf-8")
+        # Canonical serialization (sorted keys, compact) so the emailed body is byte-identical to
+        # the hash we two-phase-confirm and to the partner's email — required for §12.2 "agree
+        # exactly". Same params as interop.canonical.canonical_bytes.
+        body = json.dumps(body_json, sort_keys=True, separators=(",", ":"))
+        message = MIMEText(body, "plain", "utf-8")
         message["to"] = to_addr
         message["subject"] = subject
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
