@@ -1,0 +1,38 @@
+# Pre-commit hooks: the cheap quality gates, run locally before CI.
+#
+# Install once after cloning:
+#     uv run pre-commit install
+# After that, every `git commit` runs:
+#     - hygiene (trailing whitespace, EOF, valid YAML/TOML/JSON, no big files)
+#     - the 150-line cap check (section 3.2)
+#     - ruff with --fix so easy issues are auto-corrected
+#
+# pytest is intentionally NOT a per-commit hook; CI runs the full suite on every push.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=600]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: local
+    hooks:
+      - id: line-cap-150
+        name: 150-line cap (section 3.2)
+        entry: python scripts/check_line_cap.py
+        language: system
+        pass_filenames: false
+        files: ^(src|scripts|tests)/.+\.py$
