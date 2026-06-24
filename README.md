@@ -1,6 +1,6 @@
 # CopThief — Dual AI Agents Pursuit Game over MCP Servers
 
-> Course exercise 6 ("Orchestration of AI Agents", University of Haifa).
+> Course exercise 6 ("Orchestration of AI Agents", University of Haifa · Dr. Yoram Segal).
 > Two autonomous AI agents — a **Cop** and a **Thief** — negotiate in free natural
 > language and play a grid pursuit game. Each agent runs as its own **MCP server**
 > (FastMCP) over HTTP; an MCP-client **orchestrator** owns the LLM and drives the match.
@@ -11,7 +11,16 @@ secondary. **This README doubles as the assignment's scientific report (PDF §11
 
 ---
 
-## 1. Problem framing — a DecPOMDP
+## 1. Abstract
+
+CopThief is a complete end-to-end pipeline in which two **autonomous AI agents** — a
+**Cop** and a **Thief** — negotiate a protocol in **free natural language** and play a
+turn-based pursuit game on a grid. Each agent runs as its own **MCP server** (FastMCP)
+over HTTP; an **MCP client / orchestrator** owns the LLM, drives the dialogue, and acts
+as the authoritative referee. The system runs fully locally (Level 1), is cloud-deployable
+(Level 2), and supports inter-group competition (Level 3).
+
+## 2. Problem framing — a DecPOMDP
 
 The pursuit is a **Decentralized, Partially Observable Markov Decision Process**, formally
 `⟨ n, S, {Aᵢ}, P, R, {Ωᵢ}, O, γ ⟩`:
@@ -22,14 +31,40 @@ The pursuit is a **Decentralized, Partially Observable Markov Decision Process**
 | `S` | board state: both positions + the set of barrier cells |
 | `{Aᵢ}` | per-agent actions: move in 8 directions, `STAY`, or (cop only) place a barrier |
 | `P` | deterministic transition (referee applies a legal move; illegal → no-op) |
-| `R` | the scoring table (cop_win 20 / thief_win 10 / loss 5) |
+| `R` | the reward/score table (Section 3) |
 | `{Ωᵢ}, O` | each agent observes only its own cell + the rival's *messages*; the rival's exact cell is revealed **only within a Chebyshev `vision_radius`** |
-| `γ` | discount (conceptual; play is finite-horizon at 25 moves) |
+| `γ` | discount (conceptual; play is finite-horizon at 25 moves; used by optional Q-learning) |
 
 Partial observability is the crux: beyond the vision radius an agent acts on a **belief**
 formed from the opponent's free-text messages — which may be vague, stale, or **deceptive**.
 
-## 2. System architecture
+## 3. Game rules, grid and scoring
+
+- **Grid:** configurable (default **5×5**; supports 2×2…N×N for staged sanity checks),
+  origin configurable, 8-directional movement.
+- **Subgame:** ≤ 25 moves, turn-based, **thief moves first**. Cop wins by landing on the
+  thief's cell; thief wins by surviving 25 moves. Cop may place ≤ 5 barriers; entering a
+  barrier is illegal (the thief is caught if it does).
+- **Game:** 6 subgames played in sequence; results aggregated.
+
+| Outcome | Cop | Thief |
+|---------|-----|-------|
+| Cop wins | 20 | 5 |
+| Thief wins | 5 | 10 |
+
+Max per team in inter-group play = 90 (3×20 + 3×10); min = 30. Bonus: higher total → 10,
+lower → 7, exact tie → 5 (averaged across series).
+
+## 4. System architecture
+
+Two views of the same system — **runtime flow** (what happens during a match) and **code
+layering** (how the repo is organised).
+
+### 4.1 Runtime flow — match play (PDF §5.2)
+
+During a game the **orchestrator is the MCP client**: it runs both agent personas (each with
+its own LLM dialogue), decides moves via strategy, verbalises them, and calls the remote
+servers over HTTP. The servers are dumb tool hosts — no LLM inside.
 
 ```
             ┌──────────────────────── MCP client / orchestrator ─────────────────────────┐
@@ -41,23 +76,64 @@ formed from the opponent's free-text messages — which may be vague, stale, or 
               │ Cop MCP server  │  pure tools:               │ Thief MCP server │
               │ (FastMCP)       │  reset/observe/move/...     │ (FastMCP)        │
               └─────────────────┘                            └──────────────────┘
+                                 deliver_message · inbox (inter-group only)
 ```
 
-- **LLM lives in the client, not the servers** (PDF §5.2): servers expose *pure tools*
-  (`reset`, `observe`, `move`, `place_barrier`, `note`); the orchestrator runs the LLM
-  persona, decides, verbalises, parses the reply, and calls the tools.
+In **self-play** both URLs usually point at the same `serve-combined` process
+(`/cop/mcp` + `/thief/mcp` on one port). In **inter-group** play each team hosts its
+own pair of endpoints; the peer loop calls the opponent's `deliver_message` and polls its own
+`inbox()`.
+
+### 4.2 Code layering — SDK entry point
+
+All CLI/GUI/tests go through **`CopThiefSDK`**; the orchestrator owns the LLM and referee
+logic; MCP servers stay thin.
+
+```
+External (CLI / GUI / tests)
+        │
+        ▼
+   CopThiefSDK (single entry point)
+        │
+        ▼
+  Orchestrator = MCP CLIENT  ──owns──►  LLM (Claude / Ollama / API / mock)
+   • builds observations, decides (strategy), verbalises (LLM)
+   • authoritative referee (validates moves, detects capture)
+   • writes the state-by-state audit log
+        │  HTTP + Bearer token
+        ├───────────────► Cop  MCP server  (FastMCP) — PURE TOOLS, no LLM
+        └───────────────► Thief MCP server (FastMCP) — PURE TOOLS, no LLM
+                          tools: reset, observe, move, place_barrier, note,
+                                 deliver_message, inbox
+```
+
+**Component layout (`src/copthief/`):** `domain/` (board, rules, scoring, subgame state
+machine) · `strategy/` (adaptive, heuristic, tabular Q-learning) · `llm/` (provider
+abstraction) · `agents/` (FastMCP servers + pure-tool session) · `orchestrator/`
+(dialogue, negotiation, match runner, MCP client) · `interop/` (peer adapter for Level 3) ·
+`reporting/` (JSON + Gmail) · `shared/` (config, audit logger, gatekeeper, version) ·
+`gui/` · `sdk/`.
+
+### 4.3 Cross-cutting concerns
+
+- **LLM lives in the client, not the servers** (PDF §5.2): the orchestrator runs a separate
+  LLM *persona* per agent inside the client. HTTP transport is used **even locally**, to
+  prepare for the cloud step.
 - **Security**: transport-level **bearer-token** auth on every call (revoke by rotating
   the token; wrong/absent token → 401). Secrets only via environment / `.env`.
 - **Reliability**: all external LLM/Gmail calls route through an **API gatekeeper**
-  (rate-limit + retry) and a **token-usage meter** (cost estimate per model).
+  (per-minute + per-hour rate-limit, retry) and a **token-usage meter** (cost estimate
+  per model).
 - **Auditability**: every negotiation message, turn and outcome is appended to a
   JSON-lines **audit log** — the evidence trail for inter-group dispute resolution.
 
-## 3. Free-language orchestration & partial observation (the core challenge)
+## 5. Free-language orchestration & partial observation
 
 - **No rigid protocol** (PDF §5.1): each turn an agent emits a free-text message describing
   its **intentions, local observations, or attempts at deception** — *not* raw coordinates.
   A tolerant parser extracts a cell only when one is volunteered.
+- The match opens with a **negotiation handshake**: each agent emits a free-language message
+  agreeing on board size, origin and turn order (logged as `negotiation` events).
 - **Conditional disclosure**: under `disclosure: partial`, an agent reveals its `(x,y)`
   **only when the rival can already see it**; otherwise it gives a vague direction. The
   opponent's belief then goes stale and it must **search** to re-acquire.
@@ -68,30 +144,74 @@ formed from the opponent's free-text messages — which may be vague, stale, or 
   liar's claims** for the rest of the subgame, falling back on sight + systematic search.
 - **The hunt**: a blind cop does not idle — it heads to the thief's **last-seen** cell, then
   **sweeps the board corners**; the thief flees toward **open, central** cells to avoid
-  being cornered. This is what makes the cop competent under partial observation.
+  being cornered. On a small 5×5 a competent hunting cop reliably re-acquires and corners
+  the thief (the intended game); it **would balance only on a larger board** (sensitivity
+  study in §9). (`exact` reproduces full observability for the deterministic pipeline demo.)
 
-## 4. Strategy (secondary)
+**Negotiating the radius (inter-group):** because the radius strongly favours one side,
+each agent advocates the value helping its role in the opening handshake — the **cop
+requests a wider radius, the thief a narrower one**. An enhancement takes effect only on
+**mutual agreement** (`negotiable: true`); otherwise the base radius applies.
 
-- **Adaptive (default)** anticipates the rival's next cell from its last move; **heuristic**
-  is greedy Chebyshev distance with cornering (cop) / open-cell (thief) tie-breaks;
-  **tabular Q-learning** is an optional learning policy (ε-greedy, Bellman update).
-- **Barriers** are *need-based* (≤5/subgame): the cop blocks only when genuinely boxed in.
-  On an open 5×5 with own-cell placement they are rarely the best move, so they stay a
-  situational tool rather than a core tactic.
+Example dialogue (illustrative; full transcript in `assets/demo_transcript.md`):
 
-## 5. Results & visualizations (proofs)
+> **thief:** "Nice try, but I'm slipping off into open space to the west — you won't pin me down."
+> **cop:** "I've got eyes on you now, thief—sliding to (4,2) and closing the distance."
+
+## 6. LLM architecture (three approaches)
+
+1. **Cloud API key** (OpenAI / Anthropic / Gemini) — simplest, recommended fallback.
+2. **Local Ollama** exposed via a secure tunnel — see [`docs/archive/ngrok.md`](docs/archive/ngrok.md)
+   for ngrok gotchas; Cloudflare is what we use for MCP.
+3. **Hybrid** — LLM + client local, only the MCP servers public (outbound HTTPS only).
+
+The implementation provides a `claude` provider (Claude **CLI** on the free subscription,
+with an Anthropic-API fallback), an `ollama` provider, a generic cloud `api` provider, and
+an offline deterministic `mock` provider used for CI. All calls route through the API
+**gatekeeper** (rate limiting + retries). Role-specific system prompts (`llm/prompts.py`)
+shape the cop's pursuing tone and the thief's evasive tone.
+
+## 7. Strategy (secondary)
+
+- **Blind-search targeting:** when an agent loses sight of its rival it does not idle — the
+  **cop hunts** (last-seen cell, then corner sweep) and the **thief flees** toward open,
+  central cells.
+- **Deception & counter-intelligence:** with deception on, the hidden **thief claims the
+  mirror-image cell**; the **cop verifies once** and, finding it empty, brands the rival a
+  liar and reverts to search + sightings. On 5×5 the cop still wins ~87% (it recovers fast).
+- **Adaptive (default):** anticipates the opponent's next cell from its last observed move.
+- **Heuristic:** Chebyshev distance with cornering (cop) / open-cell (thief) tie-breaks.
+  Barriers are *need-based* (≤5/subgame) — rarely the best move on an open 5×5.
+- **Tabular Q-learning (optional):** ε-greedy with the Bellman update
+  `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards.
+- **Strategy-expert skills:** `.claude/skills/cop-strategist` and `thief-strategist`
+  document per-role principles and mid-game adaptation cues.
+
+## 8. Logging, reporting and security
+
+- **Audit log** (`logs/game_audit.log`): append-only JSON-lines record of every
+  negotiation message, turn, and outcome — the evidence trail for inter-group dispute
+  resolution.
+- **Reports:** structured JSON for the internal game (§9.1) and inter-group bonus (§9.2);
+  emailed via the **Gmail API** (OAuth `gmail.modify`, token-based).
+- **Security:** transport-level **bearer-token** auth on every MCP call (revoke by
+  rotating the token; wrong/absent token → 401). Secrets only via environment / `.env`;
+  no keys in source.
+
+## 9. Results & visualizations
 
 The cop's active search makes pursuit **board-size sensitive** under `vision_radius: 1`
-(competent cop vs. evading thief; 90 subgames/size). This is a **sensitivity study — the
-game is played on `5×5`** (PDF §4.2/§10 default); `2×2 → 4×4` are the §4.5 sanity stages.
+(competent cop vs. evading thief; 90 subgames per size). This is a **sensitivity study —
+the game is played on `5×5`** (PDF §4.2/§10 default); `2×2 → 4×4` are the §4.5 sanity stages.
+A larger board is only ever an **optional inter-group enhancement by mutual agreement** (§12).
 
 | Board | 5×5 | 6×6 | 7×7 | 8×8 | 9×9 |
 |-------|-----|-----|-----|-----|-----|
 | **Cop win %** | 93 | 82 | 72 | 57 | 47 |
 
 With thief **deception** + a skeptical cop enabled (the default), 5×5 settles at ~**87% cop**
-— the thief's lies lift its share, but counter-intelligence keeps the cop ahead. Quality
-bar: **106 tests, 93% coverage**, ruff-clean, every source file ≤150 lines.
+— the thief's lies lift its share, but counter-intelligence keeps the cop ahead. Reproducible
+in `notebooks/analysis.ipynb`.
 
 **Visual proof** — three complementary views. The **live CLI** (`selfplay --verbose`) prints
 the board and the agents' free-language dialogue every turn (here the thief *lies* and the
@@ -119,28 +239,101 @@ A **final-state PNG** and a **move-by-move filmstrip per subgame** complete the 
 ![Final board](assets/board.png)
 
 ![Subgame 1, move by move](assets/demo_filmstrip_sg1.png)
+![Subgame 2](assets/demo_filmstrip_sg2.png)
+![Subgame 3](assets/demo_filmstrip_sg3.png)
+![Subgame 4](assets/demo_filmstrip_sg4.png)
+![Subgame 5](assets/demo_filmstrip_sg5.png)
+![Subgame 6](assets/demo_filmstrip_sg6.png)
 
-The full set `assets/demo_filmstrip_sg1.png … sg6.png` and the dialogue transcript
-`assets/demo_transcript.md` are regenerated by `scripts/capture_demo.py`. The board-size
-sweep is reproducible in `notebooks/analysis.ipynb`.
+The full set and the dialogue transcript `assets/demo_transcript.md` are regenerated by
+`scripts/capture_demo.py`.
 
-**Inter-group cloud play (bonus, §12).** A full 6-sub-game match was played live against group
-ImreEyal over public `trycloudflare` tunnels, ending in a byte-identical agreed report (the
-§12.2 two-phase hash confirm) emailed to the grader. Sanitised evidence is committed under
-`assets/evidence/` — the server access log (with the bearer-token `401`), the client run log,
-and both agreed JSON reports. Representative client + server lines (seed / peer-IP redacted):
+**Inter-group cloud play (bonus, §12).** Two live 6-sub-game series were played against group
+ImreEyal over public HTTPS tunnels (partner `trycloudflare`, our named tunnel
+`https://mcp.alon.website`):
+
+| Run | Board / rounds | Result | Notes |
+|-----|----------------|--------|-------|
+| 1 | 5×5 / 25 | **75–75 tie** | All six sub-games cop-wins → structural tie under role swap |
+| 2 | 8×8 / 7 | **ImreEyal 80 / anrbj666 60** | Re-frozen after 8×8 trials at 12, 15, … rounds; byte-identical report emailed |
+
+Both runs used Option A (full disclosure + commit-reveal audit), `MOVE|COMMIT|NONCE|STATE`
+blocks, automated two-phase `REPORT_SHA` confirm, and strategy moves with LLM dialogue.
+Sanitised evidence is committed under `assets/evidence/` — server access log (401 on bad
+token), client run log, internal §9.1 report, and agreed §9.2 bonus report. Representative
+lines (seed / peer-IP redacted):
 
 ```text
 [ply] sg0 thief SEND -> …taunt… || MOVE:[…] | COMMIT:… | NONCE:… | STATE:…
 [deliver] correspondence-laden-…trycloudflare.com -> ok in 0.6s
 [ply] sg3 cop  RECV <- MOVE:[…] | COMMIT:…             # role swap → we are now the cop
-[series] HASHES MATCH (…) -> emailing report to the grader
+[series] HASHES MATCH (c5ad6776…) -> emailing report to the grader
 INFO: <peer-ip> - "GET /cop/mcp HTTP/1.1" 401 Unauthorized  # bearer token enforced
 ```
 
-**Cost.** Messages are one–two sentences, so token use is tiny: ~**$0.08** per sub-game and
-**< $1** per 6-game match at Opus-4.8 API rates — and **free** on the Claude-CLI subscription
-(per-run figures in `results/usage_<ts>.json`).
+See `docs/PRD_interop.md` and `docs/BONUS_ASSUMPTIONS.md` for the full negotiation history.
+
+## 10. Cost analysis
+
+Every external LLM (and Gmail) call routes through the central **API gatekeeper**
+(rate-limit + retry, config-driven) and a **usage meter** (`shared/usage.py`) that
+estimates input/output tokens (~4 chars/token) and USD cost from a configurable per-model
+price table. After each game a `results/usage_<ts>.json` is written with the per-model
+breakdown and totals. `est_usd` prices tokens at **API rates** — the actual cost when the
+Anthropic-API path is used and the **API-equivalent** cost (amount saved) when the free
+Claude-CLI subscription serves the call. Because messages are short (one–two sentences)
+token use is minimal: at Opus 4.8 rates one sub-game is **≈ $0.08** and a full 6-subgame
+match is **well under $1** on the API — and **free** on the CLI subscription.
+
+## 11. Quality & engineering
+
+- **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
+- **~137 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
+  (no hardcoded game parameters); versioned config validated on startup.
+- **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
+  **per-minute + per-hour** limits, retries, `get_queue_status()` monitoring and usage
+  metering (Template-Method `LLMProvider.complete`).
+- **UI/UX (Nielsen heuristics):** the CLI/GUI favour *visibility of system status* (live
+  board + turn-by-turn dialogue), *match between system and real world* (natural-language
+  taunts, human (x,y) labels), *consistency* (one `copthief` command surface), and *error
+  prevention/recovery* (graceful email/LLM degradation, clear logs).
+- Verified from a **fresh clone** (`uv sync` + tests + run) — self-sufficient repo.
+- **ISO/IEC 25010 mapping:** *functional suitability* (referee-validated, scored rules),
+  *reliability* (append-only audit log + graceful LLM/email degradation), *security*
+  (bearer auth, env-only secrets), *maintainability* (SDK layering, ≤150-line modules,
+  ~96% tests), *performance efficiency* (offline mock path, minimal token use), and
+  *portability* (uv + fully config-driven, OS-independent).
+
+## 12. Deployment & levels
+
+- **Level 1 (local self-game)** ✓ working.
+- **Level 2 (cloud)** ✓ — host both MCP servers behind HTTPS; verified over Cloudflare quick
+  tunnel and our named tunnel `mcp.alon.website` (full 6-subgame `netplay`).
+- **Level 3 (inter-group)** ✓ — additive **peer adapter** (`interop/`): free-text
+  `deliver_message` + `inbox()`, commit-reveal audit, `SG:<index>` framing, and
+  **byte-identical** report digests with two-phase confirm. The §5.2 self-game core is
+  unchanged. See `docs/PRD_interop.md`, `docs/BONUS_ASSUMPTIONS.md`, `docs/DEPLOYMENT.md`.
+
+**Tunnel choice (lessons learned).** We first tried **ngrok free tier** for public MCP play.
+It looked fine on smoke tests but **failed mid-match**: the free tier caps new connections
+(~20/min), drops idle SSE links between phases, and (on the free plan) gives only **one**
+dev domain — so two separate cop/thief tunnels round-robin to the wrong server unless you
+use `serve-combined` on a single port. Net result: `netplay` stalled after negotiation.
+We switched to **Cloudflare quick tunnel** (free, no account) and then a **named tunnel**
+on our own domain; both completed full 6-subgame matches. Full Windows walkthrough, YAML
+gotchas (agent version, v2 schema), and the failure table live in
+[`docs/archive/ngrok.md`](docs/archive/ngrok.md) — kept for reference; **ngrok paid** or
+Ollama-only tunneling still work if you prefer them.
+
+## 13. Known limitations & future work
+
+- The move decision uses a heuristic (per the assignment, strategy is secondary); the
+  Q-learning option is provided but not trained to optimality.
+- In self-play the believed opponent position equals the true one; under partial
+  observability with a real opponent, belief comes solely from parsed messages.
+- Bearer auth uses a static token (sufficient for the exercise); OAuth/JWT is a future
+  hardening step.
 
 ---
 
@@ -165,6 +358,9 @@ uv run copthief selfplay
 # Live demo — natural-language dialogue + ASCII board each turn, then a final PNG
 # (set COPTHIEF_LLM_PROVIDER=claude in .env for real Claude):
 uv run copthief selfplay --verbose --gui --seed 3
+
+# Regenerate board + filmstrips + transcript:
+uv run python scripts/capture_demo.py
 
 # Networked play — combined server (recommended for tunnels) then drive a match:
 uv run copthief serve-combined          # /cop/mcp and /thief/mcp on :8080
@@ -210,10 +406,11 @@ src/copthief/
   llm/            provider abstraction (mock/claude/ollama/api) via API gatekeeper
   agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF §5.2)
   orchestrator/   MCP client (owns the LLM) + match runner: hunt, deception, counter-intel
+  interop/        peer adapter for Level 3 (wire, transport, peer loop, series driver)
   reporting/      JSON report builder + Gmail emailer
   shared/         config, logging/audit, version, API gatekeeper, token-usage meter
   gui/            live ASCII board + final-board viewer + per-subgame filmstrips
-docs/             PRD.md, PLAN.md, TODO.md, PRD_strategy.md, PROMPTS.md, DEPLOYMENT.md
+docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, BONUS_ASSUMPTIONS
 config/  tests/  results/  logs/  assets/  notebooks/
 ```
 
@@ -221,8 +418,9 @@ config/  tests/  results/  logs/  assets/  notebooks/
 
 This README **is** the scientific report (PDF §11). [`docs/PRD.md`](docs/PRD.md),
 [`docs/PLAN.md`](docs/PLAN.md) (architecture/ADRs), [`docs/PRD_strategy.md`](docs/PRD_strategy.md),
-[`docs/PROMPTS.md`](docs/PROMPTS.md) (prompt-engineering log), and
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (cloud + inter-group bonus setup) cover the rest.
+[`docs/PROMPTS.md`](docs/PROMPTS.md) (prompt-engineering log),
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (cloud + inter-group bonus setup), and
+[`docs/archive/ngrok.md`](docs/archive/ngrok.md) (ngrok free-tier failures + workarounds) cover the rest.
 
 ## Security
 
