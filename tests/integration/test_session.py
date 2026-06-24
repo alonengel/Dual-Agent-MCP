@@ -55,3 +55,11 @@ def test_note_records_opponent_message() -> None:
     session.reset(1, 1, 5)
     session.note("I am at (4,4)")
     assert session.observe()["history"] == ["I am at (4,4)"]
+
+
+def test_deliver_message_records_free_text() -> None:
+    session = _session(Role.THIEF)
+    session.reset(1, 1, 5)
+    out = session.deliver_message("heading north, catch me if you can")
+    assert out == {"ok": True, "count": 1}
+    assert session.observe()["history"] == ["heading north, catch me if you can"]

@@ -61,11 +61,17 @@ decides the move (strategy) and verbalises it (LLM), then calls the agent server
   and parses the same free text as real providers, keeping CI meaningful and offline.
 - **ADR-6: Config-driven everything.** No game parameter is hardcoded; values live in
   `config/*.yaml|json`, versioned and validated at startup.
+- **ADR-7: Inter-group bonus is an *additive* peer adapter (`interop/`), not a core change.**
+  The §5.2 single-orchestrator core can't drive an opaque opponent, so the bonus uses a
+  peer-to-peer layer (free-text `deliver_message` + commit-reveal capture verification +
+  byte-identical report digests). *Alternative rejected:* forcing the opponent to expose
+  `move`/`observe` tools (breaks §5.1 free-language and their autonomy). See `docs/PRD_interop.md`.
 
 ## 4. Interfaces / Contracts
 
 - **MCP tools (pure, per agent server):** `reset(x,y,barriers_left)`, `observe()`,
-  `move(dx,dy)`, `place_barrier()`, `note(message)` — no LLM inside the server.
+  `move(dx,dy)`, `place_barrier()`, `note(message)`, `deliver_message(text)` (inter-group
+  free-text channel) — no LLM inside the server.
 - **LLMProvider.complete(system, user) -> str** — the only LLM contract (client side).
 - **Audit line schema** — `{ts, event, ...fields}` JSON per line.
 - **Report JSON** — sections 9.1 (internal) and 9.2 (bonus) of the assignment.

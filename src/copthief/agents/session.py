@@ -60,7 +60,12 @@ class AgentSession:
         return {"legal": result.legal, "reason": result.reason,
                 "barriers_left": self.barriers_left}
 
-    def note(self, message: str) -> dict[str, Any]:
-        """Record what the opponent told us (the agent only knows what it is told)."""
-        self.history.append(message)
+    def deliver_message(self, text: str) -> dict[str, Any]:
+        """Free-text cross-agent channel (the inter-group peer protocol's tool). The server
+        only records the message; the LLM that interprets it lives in the client (PDF §5.2)."""
+        self.history.append(text)
         return {"ok": True, "count": len(self.history)}
+
+    def note(self, message: str) -> dict[str, Any]:
+        """Alias for the internal orchestrator path; see :meth:`deliver_message`."""
+        return self.deliver_message(message)

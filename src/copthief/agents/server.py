@@ -60,6 +60,11 @@ def build_server(role: Role, config: Config | None = None) -> tuple[FastMCP, dic
         """Record an opponent's free-text message for this agent."""
         return session.note(message)
 
+    @mcp.tool
+    def deliver_message(text: str) -> dict:
+        """Inter-group free-text channel: record the opponent's prose (client LLM interprets)."""
+        return session.deliver_message(text)
+
     return mcp, config.section("mcp")
 
 
