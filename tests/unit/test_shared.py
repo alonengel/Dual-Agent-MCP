@@ -50,6 +50,16 @@ def test_gatekeeper_executes_and_counts() -> None:
     assert gate.queue_depth() == 1
 
 
+def test_gatekeeper_queue_status_reports_minute_and_hour_windows() -> None:
+    gate = ApiGatekeeper({"requests_per_minute": 60, "requests_per_hour": 1000,
+                          "concurrent_max": 4})
+    gate.execute(lambda: None)
+    status = gate.get_queue_status()
+    assert status["minute_used"] == 1 and status["hour_used"] == 1
+    assert status["minute_limit"] == 60 and status["hour_limit"] == 1000
+    assert status["concurrent_max"] == 4
+
+
 def test_gatekeeper_retries_then_raises() -> None:
     gate = ApiGatekeeper({"requests_per_minute": 60, "retry_after_seconds": 0, "max_retries": 2})
     calls = {"n": 0}
