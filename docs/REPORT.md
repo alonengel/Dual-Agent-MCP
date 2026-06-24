@@ -215,22 +215,31 @@ subgame is **≈ $0.08** and a full 6-subgame game is **well under $1** on the A
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **102 tests, ~93% coverage** (`pytest --cov`); external HTTP/LLM mocked; hermetic.
+- **114 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
-  (no hardcoded game parameters); versioned config.
-- **API gatekeeper**: all external LLM/Gmail calls route through one throttled, retrying,
-  metered chokepoint (Template-Method `LLMProvider.complete`).
+  (no hardcoded game parameters); versioned config validated on startup.
+- **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
+  **per-minute + per-hour** limits, retries, `get_queue_status()` monitoring and usage
+  metering (Template-Method `LLMProvider.complete`).
 - **UI/UX (Nielsen heuristics):** the CLI/GUI favour *visibility of system status* (live
   board + turn-by-turn dialogue), *match between system and real world* (natural-language
   taunts, human (x,y) labels), *consistency* (one `copthief` command surface), and *error
   prevention/recovery* (graceful email/LLM degradation, clear logs).
 - Verified from a **fresh clone** (`uv sync` + tests + run) — self-sufficient repo.
+- **ISO/IEC 25010 mapping:** *functional suitability* (referee-validated, scored rules),
+  *reliability* (append-only audit log + graceful LLM/email degradation), *security*
+  (bearer auth, env-only secrets), *maintainability* (SDK layering, ≤150-line modules,
+  ~96% tests), *performance efficiency* (offline mock path, minimal token use), and
+  *portability* (uv + fully config-driven, OS-independent).
 
 ## 12. Deployment & levels
 
 Level 1 (local self-game) ✓ working; Level 2 (cloud) — host both MCP servers and point the
-client at tokenised HTTPS URLs; Level 3 (inter-group) — exchange the four URLs + tokens,
-run `netplay`, both teams email matching JSON reports. See `docs/DEPLOYMENT.md`.
+client at tokenised HTTPS URLs; Level 3 (inter-group) — to play another team's **opaque**
+agent we add an *additive* **peer adapter** (`interop/`): a free-text `deliver_message`
+channel, **commit-reveal** capture verification (so a deceptive opponent can't fake/deny a
+capture), and **byte-identical** report digests with a two-phase confirm. The §5.2 self-game
+core is unchanged. See `docs/PRD_interop.md`, `docs/BONUS_ASSUMPTIONS.md`, `docs/DEPLOYMENT.md`.
 
 ## 13. Known limitations & future work
 

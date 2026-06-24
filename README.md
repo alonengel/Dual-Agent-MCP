@@ -93,8 +93,28 @@ With thief **deception** + a skeptical cop enabled (the default), 5×5 settles a
 — the thief's lies lift its share, but counter-intelligence keeps the cop ahead. Quality
 bar: **106 tests, 93% coverage**, ruff-clean, every source file ≤150 lines.
 
-**Visual proof** — three complementary views (live ASCII board each turn, a final PNG, and a
-move-by-move filmstrip *per subgame*):
+**Visual proof** — three complementary views. The **live CLI** (`selfplay --verbose`) prints
+the board and the agents' free-language dialogue every turn (here the thief *lies* and the
+cop sees through it):
+
+```text
+[negotiate] cop: Let's play 5x5, origin 1 — you move first, agreed?
+[negotiate] thief: Agreed, 5x5 and I lead.
+
+== Subgame 1 | cop (4,5) vs thief (2,3)
+  thief m0: Drifting west into the open — catch me at (5,3) if you can.   # decoy: really (2,3)
+ 5 . . . C .
+ 4 . . . . .
+ 3 T . . . .
+ 2 . . . . .
+ 1 . . . . .
+   1 2 3 4 5
+  cop  m1: I don't buy it — sweeping the board to flush you out.
+   ... (capture at move 13)
+   -> cop_win (cop 20, thief 5)
+```
+
+A **final-state PNG** and a **move-by-move filmstrip per subgame** complete the picture:
 
 ![Final board](assets/board.png)
 
