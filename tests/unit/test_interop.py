@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from copthief.constants import Outcome, Role
 from copthief.domain.board import Board
 from copthief.domain.models import Position
 from copthief.interop import canonical, commitment, peer
+from copthief.interop.peer_match import PeerMatch
+from copthief.llm.mock import MockProvider
+from copthief.orchestrator.agent import Agent
+from copthief.strategy.adaptive import AdaptiveStrategy
 
 
 def _board() -> Board:
@@ -61,3 +66,19 @@ def test_confirm_capture_rejects_tampered_reveal_and_missing_reveal() -> None:
     env["reveal"]["nonce"] = "tampered"
     assert not peer.confirm_capture(env["commit"], env["reveal"], board, Position(4, 4))
     assert not peer.confirm_capture(env["commit"], None, board, Position(4, 4))
+
+
+def _agent(role: Role) -> Agent:
+    return Agent(role, AdaptiveStrategy(), MockProvider())
+
+
+def test_peer_match_cop_capture_confirmed_by_commit_reveal() -> None:
+    match = PeerMatch(_board(), _agent(Role.COP), _agent(Role.THIEF), 25, 5, radius=5)
+    outcome, rounds = match.play(Position(2, 3), Position(3, 3))
+    assert outcome is Outcome.COP_WIN and 1 <= rounds <= 25
+
+
+def test_peer_match_thief_survives_tiny_budget() -> None:
+    match = PeerMatch(_board(), _agent(Role.COP), _agent(Role.THIEF), 1, 5, radius=1)
+    outcome, rounds = match.play(Position(1, 1), Position(5, 5))
+    assert outcome is Outcome.THIEF_WIN and rounds == 1
