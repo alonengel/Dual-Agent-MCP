@@ -66,6 +66,13 @@ class AgentSession:
         self.history.append(text)
         return {"ok": True, "count": len(self.history)}
 
+    def inbox(self) -> dict[str, Any]:
+        """Full ordered mailbox for the inter-group channel: every delivered message + a count.
+
+        ``observe`` only surfaces the last few messages (an agent snapshot); the peer turn-loop
+        instead polls this so it never drops a turn over a long subgame."""
+        return {"messages": list(self.history), "count": len(self.history)}
+
     def note(self, message: str) -> dict[str, Any]:
         """Alias for the internal orchestrator path; see :meth:`deliver_message`."""
         return self.deliver_message(message)

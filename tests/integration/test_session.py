@@ -63,3 +63,14 @@ def test_deliver_message_records_free_text() -> None:
     out = session.deliver_message("heading north, catch me if you can")
     assert out == {"ok": True, "count": 1}
     assert session.observe()["history"] == ["heading north, catch me if you can"]
+
+
+def test_inbox_returns_full_stream_past_the_snapshot_cap() -> None:
+    session = _session(Role.COP)
+    session.reset(1, 1, 5)
+    for i in range(7):
+        session.deliver_message(f"m{i}")
+    assert session.observe()["history"] == ["m2", "m3", "m4", "m5", "m6"]  # snapshot = last 5
+    box = session.inbox()
+    assert box["count"] == 7
+    assert box["messages"] == [f"m{i}" for i in range(7)]  # full ordered mailbox

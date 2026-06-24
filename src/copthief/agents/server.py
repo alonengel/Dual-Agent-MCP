@@ -65,6 +65,11 @@ def build_server(role: Role, config: Config | None = None) -> tuple[FastMCP, dic
         """Inter-group free-text channel: record the opponent's prose (client LLM interprets)."""
         return session.deliver_message(text)
 
+    @mcp.tool
+    def inbox() -> dict:
+        """Inter-group channel: the full ordered list of delivered messages (+ count)."""
+        return session.inbox()
+
     return mcp, config.section("mcp")
 
 
