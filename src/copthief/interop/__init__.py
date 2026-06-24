@@ -4,5 +4,6 @@ A peer-to-peer adapter so our agent can play another team's *opaque* agent: free
 messaging plus commit-reveal capture verification and byte-identical report digests.
 """
 
-__all__ = ["commitment", "canonical", "peer", "peer_match"]
+__all__ = ["commitment", "canonical", "peer", "peer_match", "wire", "transport", "peer_loop",
+           "peer_series"]
 __version__ = "1.0.0"

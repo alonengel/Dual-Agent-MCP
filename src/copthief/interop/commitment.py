@@ -34,9 +34,15 @@ def new_nonce() -> str:
 
 
 def commit(pos: Position, board: Board, nonce: str) -> str:
-    """SHA-256 commitment binding a true cell without revealing it."""
+    """SHA-256 commitment binding a true cell without revealing it.
+
+    Hashes canonical JSON ``{"nonce": ..., "pos": [row, col]}`` (sorted keys, no whitespace) so
+    it interoperates byte-for-byte with the partner team's commitments (agreed test vectors).
+    """
     row, col = to_cell(pos, board)
-    return hashlib.sha256(f"{row},{col}|{nonce}".encode()).hexdigest()
+    preimage = json.dumps({"nonce": nonce, "pos": [row, col]}, sort_keys=True,
+                          separators=(",", ":"))
+    return hashlib.sha256(preimage.encode()).hexdigest()
 
 
 def verify(commitment: str, pos: Position, board: Board, nonce: str) -> bool:

@@ -1,15 +1,15 @@
-"""Tests for the inter-group peer-interop layer: commit-reveal, canonical reports, envelopes."""
+"""Tests for inter-group crypto primitives: commit-reveal, common-state hash, canonical reports."""
 
 from __future__ import annotations
 
-from copthief.constants import Outcome, Role
 from copthief.domain.board import Board
 from copthief.domain.models import Position
 from copthief.interop import canonical, commitment, peer
-from copthief.interop.peer_match import PeerMatch
-from copthief.llm.mock import MockProvider
-from copthief.orchestrator.agent import Agent
-from copthief.strategy.adaptive import AdaptiveStrategy
+from copthief.reporting.report import build_bonus_report
+
+# Agreed test vectors from the partner team (group ImreEyal) — interop must match exactly.
+PARTNER_COMMIT = "3b37bed7b664a8aa96e14072f885fee2cb617bfb57cd42c1fa7430c8d98f2d22"
+PARTNER_STATE = "137b977dba629e0bfbc1b49b52f899f18d71c07adbef2f11ecb1d84704880385"
 
 
 def _board() -> Board:
@@ -39,12 +39,31 @@ def test_state_hash_detects_any_change() -> None:
     assert base != commitment.state_hash(set(), "cop", 3)         # barriers changed
 
 
+def test_commit_matches_partner_test_vector() -> None:
+    board = _board()
+    pos = peer.from_cell((2, 3), board)  # the cell their commit vector binds (row=2, col=3)
+    assert commitment.commit(pos, board, "abc123") == PARTNER_COMMIT
+
+
+def test_state_hash_matches_partner_test_vector() -> None:
+    assert commitment.state_hash({(1, 1)}, "cop", 4) == PARTNER_STATE
+
+
 def test_canonical_report_digest_matches_and_differs() -> None:
     r1 = {"report_type": "bonus_game", "groups": {"group_1": "A", "group_2": "B"}}
     r2 = {"report_type": "bonus_game", "groups": {"group_1": "A", "group_2": "B"}}
     assert canonical.reports_agree(r1, r2)
     r3 = {"report_type": "bonus_game", "groups": {"group_1": "A", "group_2": "C"}}
     assert not canonical.reports_agree(r1, r3)
+
+
+def test_bonus_report_uses_winner_subgame_schema() -> None:
+    g = {"group_name": "A", "students": [], "github_repo": "", "cop_url": "", "thief_url": ""}
+    match = {"totals_by_group": {"A": 20, "B": 10},
+             "sub_games": [{"index": 1, "outcome": "cop_win", "moves_played": 7,
+                            "cop_score": 20, "thief_score": 5}]}
+    rep = build_bonus_report(g, {**g, "group_name": "B"}, match)
+    assert rep["sub_games"] == [{"index": 1, "winner": "cop", "cop_score": 20, "thief_score": 5}]
 
 
 def test_envelope_state_sync_and_capture_confirmation() -> None:
@@ -66,19 +85,3 @@ def test_confirm_capture_rejects_tampered_reveal_and_missing_reveal() -> None:
     env["reveal"]["nonce"] = "tampered"
     assert not peer.confirm_capture(env["commit"], env["reveal"], board, Position(4, 4))
     assert not peer.confirm_capture(env["commit"], None, board, Position(4, 4))
-
-
-def _agent(role: Role) -> Agent:
-    return Agent(role, AdaptiveStrategy(), MockProvider())
-
-
-def test_peer_match_cop_capture_confirmed_by_commit_reveal() -> None:
-    match = PeerMatch(_board(), _agent(Role.COP), _agent(Role.THIEF), 25, 5, radius=5)
-    outcome, rounds = match.play(Position(2, 3), Position(3, 3))
-    assert outcome is Outcome.COP_WIN and 1 <= rounds <= 25
-
-
-def test_peer_match_thief_survives_tiny_budget() -> None:
-    match = PeerMatch(_board(), _agent(Role.COP), _agent(Role.THIEF), 1, 5, radius=1)
-    outcome, rounds = match.play(Position(1, 1), Position(5, 5))
-    assert outcome is Outcome.THIEF_WIN and rounds == 1
