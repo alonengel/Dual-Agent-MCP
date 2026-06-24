@@ -21,6 +21,17 @@ function Resolve-Cloudflared {
     return $null
 }
 
+function Get-DotEnvToken {
+    # Read COPTHIEF_MCP_TOKEN from .env (last occurrence wins, matching python-dotenv).
+    $envFile = Join-Path $PSScriptRoot ".env"
+    if (Test-Path $envFile) {
+        $hit = Select-String -Path $envFile -Pattern '^\s*COPTHIEF_MCP_TOKEN\s*=\s*(.+?)\s*$' |
+            Select-Object -Last 1
+        if ($hit) { return $hit.Matches[0].Groups[1].Value }
+    }
+    return $null
+}
+
 function Stop-PortListener {
     param([int]$Port = 8080)
     $pids = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
@@ -88,10 +99,12 @@ switch ($Task) {
     "tunnel" {
         # Fixed-URL named tunnel (e.g. https://mcp.alon.website). One-time setup first:
         # cloudflared tunnel login / create copthief / route dns + ~/.cloudflared/config.yml.
+        if (-not $env:COPTHIEF_MCP_TOKEN) { $env:COPTHIEF_MCP_TOKEN = Get-DotEnvToken }
         if (-not $env:COPTHIEF_MCP_TOKEN) {
-            Write-Host "Set COPTHIEF_MCP_TOKEN first (the same token the client/partner uses)."
+            Write-Host "Set COPTHIEF_MCP_TOKEN (in .env or the shell) first - the token partners use."
             exit 1
         }
+        Write-Host "Auth token loaded (partners authenticate with the bearer token)."
         $cloudflared = Resolve-Cloudflared
         if (-not $cloudflared) { Write-Host "cloudflared not found."; exit 1 }
         Stop-PortListener -Port 8080
