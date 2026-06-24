@@ -23,7 +23,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Agent-level rule negotiation (vision radius); per-subgame state reset
 - [x] Regenerated demo assets (board + 6 filmstrips + transcript) on seed 3
 
-## Phase 3 — Cloud deployment (Level 2: self-game in the cloud)  ✅ code complete
+## Phase 3 — Cloud deployment (Level 2: self-game in the cloud)  ✅ complete
 - [x] FastMCP cop/thief servers over HTTP with token auth
 - [x] Networked orchestrator (`mcp_client.NetworkMatch`) driving remote servers
 - [x] `serve-combined` single-endpoint mode + persistent MCP sessions
@@ -32,7 +32,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Run one **public** self-game over the named tunnel (`tasks.ps1 tunnel` → `netplay`) — verified over `https://mcp.alon.website` (see `assets/evidence/internal_game_report.json`, `docs/DEPLOYMENT.md`)
 - [x] Persistent host: named Cloudflare tunnel → `mcp.alon.website` (configured)
 
-## Phase 4 — Inter-group bonus (Level 3)  ⏳ partner run scheduled for tomorrow
+## Phase 4 — Inter-group bonus (Level 3)  ✅ complete
 - [x] Agent-level rule negotiation built (vision radius); enhancements only by mutual agreement (§12)
 - [x] Bonus JSON report (§9.2) builder + Gmail emailer ready
 - [x] Shared-assumptions spec to send partner teams → `docs/BONUS_ASSUMPTIONS.md`

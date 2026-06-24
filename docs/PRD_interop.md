@@ -98,20 +98,20 @@ Claude on both sides; reports were byte-identical (matching SHA-256 `8aab1c0…`
 all six forced cop-wins → a structural **75–75 tie** (on 5×5/25 the cop always corners the thief, and
 the role swap equalises totals).
 
-**Run 2 (re-frozen to break the tie):** keep §12.2 scoring exactly (grader schema intact) and change
-only the game so a strong thief can survive → decisive points. Re-frozen with the partner:
-- Board **8×8**, **12 rounds** (tunable ±3), start **cop `[0,0]` / thief `[7,7]`**.
+**Run 2 (re-frozen to break the tie) — complete (24 Jun 2026).** Kept §12.2 scoring exactly and
+changed only the game so a strong thief can survive:
+- Board **8×8**, **7 rounds** (re-frozen from 12), shared seed, start **cop `[0,0]` / thief `[7,7]`**.
 - Unchanged: async dumb-mailbox · Option A full disclosure · `MOVE|COMMIT|NONCE|STATE` block ·
   **STATE non-fatal** (redundant with barriers off; commit-verify + cleartext positions carry
   correctness, move_count drifts a step under retries) · barriers off · thief-first · 8-dir ·
-  retry-safe + COMMIT-dedup both ways · 0-based `[row,col]` · `group_1=ImreEyal`/`group_2=anrbj666` ·
-  schedule group_1 cop 0–2 (we thief), group_2 cop 3–5 · scoring 20/5 · 5/10.
+  retry-safe + COMMIT-dedup both ways · 0-based `[row,col]` · `SG:<index>` framing ·
+  `group_1=ImreEyal`/`group_2=anrbj666` · schedule group_1 cop 0–2 (we thief), group_2 cop 3–5 ·
+  scoring 20/5 · 5/10.
 - **Automated two-phase confirm** (`REPORT_SHA:<sha256>` over the channel) both sides; email only on
-  a confirmed match (our send behind `--send`, theirs behind a human press). `commit`/`state_hash`
-  pinned to their **test vectors** (regression-tested).
-
-**Remaining (run 2):** partner re-freezes 8×8/12 + restarts → both clear inboxes → relaunch
-`run_bonus_series.py --opp-cop … --opp-thief … --grid-size 8 --rounds 12` → reconcile hashes → email.
+  a confirmed match. `commit`/`state_hash` pinned to their **test vectors** (regression-tested).
+- Live over partner `trycloudflare` URLs + our `mcp.alon.website` named tunnel; byte-identical report
+  SHA `c5ad6776…`, emailed after hash match. Result: **ImreEyal 80 / anrbj666 60** (bonus claim 10 vs 7).
+  Evidence: `assets/evidence/intergroup_cloud_run.log`, `assets/evidence/bonus_game_report.json`.
 
 ## 8. Success criteria
 

@@ -20,8 +20,15 @@ that series (PDF §12.2). Defaults follow the assignment's config table (§10).
   apart). On 5×5 the same convention is [0,0]/[4,4].
 
 ## 2. Subgame & series (PDF §4.1, §12.1)
-- Subgame round cap: **12 rounds** for the 8×8 bonus (tunable ±3 if it still sweeps one way);
-  the self-game keeps **25**.
+- **Negotiation path (with ImreEyal):** several freezes were tried before the final graded run:
+  - **5×5 / 25 rounds** (Run 1, live) — every sub-game a cop-win → structural **75–75 tie**.
+  - **8×8** with longer caps (**12**, **15**, and similar trials) — still too cop-heavy at both
+    teams' strategy strength; most sub-games swept to the cop.
+  - **8×8 / 7 rounds** (Run 2, live, shared seed) — first decisive series (**ImreEyal 80 /
+    anrbj666 60**); byte-identical report emailed.
+  §12.2 scoring never changed — only board size and round budget.
+- **Frozen parameters:** subgame cap **7 rounds** on **8×8**; the graded **self-game** stays **25**
+  on **5×5**.
 - Series: **6 subgames** with role swap — subgames **0–2**: Group A (`group_1`) cop vs Group B
   (`group_2`) thief; subgames **3–5**: Group B cop vs Group A thief. We are `group_2` → thief 0–2,
   cop 3–5.
