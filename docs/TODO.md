@@ -29,7 +29,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] `serve-combined` single-endpoint mode + persistent MCP sessions
 - [x] Cloudflare quick tunnel verified end-to-end (full 6-subgame `netplay`)
 - [x] Install `cloudflared`; local combined-mode proof (`tasks.ps1 cloud`)
-- [ ] Run one **public** self-game over the named tunnel (`tasks.ps1 tunnel` → `netplay`)
+- [x] Run one **public** self-game over the named tunnel (`tasks.ps1 tunnel` → `netplay`) — verified over `https://mcp.alon.website` (see `assets/evidence/internal_game_report.json`, `docs/DEPLOYMENT.md`)
 - [x] Persistent host: named Cloudflare tunnel → `mcp.alon.website` (configured)
 
 ## Phase 4 — Inter-group bonus (Level 3)  ⏳ partner run scheduled for tomorrow
@@ -37,15 +37,21 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Bonus JSON report (§9.2) builder + Gmail emailer ready
 - [x] Shared-assumptions spec to send partner teams → `docs/BONUS_ASSUMPTIONS.md`
 - [x] Peer-interop adapter (`interop/`: `deliver_message` + commit-reveal + canonical report) → `docs/PRD_interop.md`
-- [ ] Pick partner team; exchange bearer tokens + 4 MCP URLs; smoke-test connectivity
-- [ ] Wire the peer turn-loop to the partner's live agent (final remote step on game day)
-- [ ] Run 6 subgames (3 as cop, 3 as thief); both teams email **matching** reports (else 0, §12.2)
+- [x] Partner protocol locked with group ImreEyal: **Option A** (full disclosure + commit-reveal
+      audit), `MOVE|COMMIT|NONCE|STATE` block, STATE-after-ply, barriers off; `commit`/`state` pinned to their vectors
+- [x] Async client-driven turn-loop (`interop/transport.py` mailbox + `interop/wire.py` block
+      codec + `interop/peer_loop.py` deterministic capture + desync guard); two loops play a full subgame in-process (tested)
+- [x] Series driver (`interop/peer_series.py` `play_series`/`score_series` + `transport.live_io`):
+      §12.1 schedule (we are group_2 ⇒ thief 0–2, cop 3–5), starts cop `[0,0]`/thief `[4,4]`; full series tested in-process
+- [x] Full `bonus_game` sample diffed **byte-for-byte** with partner (group strings + all fields match)
+- [x] `inbox()` tool (full mailbox) + local self-check passed: deliver→inbox round-trip + wrong-token reject over HTTP
+- [x] Bring up tunnel + servers (`tasks.ps1 tunnel`); send our 2 URLs + token; live `deliver_message` smoke test each way
+- [x] Run 6 subgames live; both teams email **matching** reports (else 0, §12.2)
 
 ## Submission checklist
 - [x] Team identity in `config/config.yaml` (group `anrbj666`, students, repo)
 - [x] Scientific report = `README.md` at the repo root (PDF §11) — no PDF export needed
-- [x] Regenerate assets: `uv run python scripts/capture_demo.py` (per-subgame filmstrips)
-- [ ] Record demo video (live game with Claude — see capture command below)
+- [x] Game demo visuals: per-subgame filmstrips + `assets/board.png` (see `scripts/capture_demo.py`; PDF does not require video)
 - [x] Gmail: confirmed delivery — `selfplay --email --email-to ...` sent the JSON report
 - [x] Anthropic API key: kept **disabled** in the console except during active testing (the
       Claude CLI subscription is the primary path; the API key is only a fallback)

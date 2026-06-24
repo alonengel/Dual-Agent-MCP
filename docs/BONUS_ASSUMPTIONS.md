@@ -7,15 +7,24 @@ match**. Mismatching rules — or final reports that don't match exactly — voi
 that series (PDF §12.2). Defaults follow the assignment's config table (§10).
 
 ## 1. Board & movement (PDF §4.2–4.3)
-- Grid **5×5**, origin **1** (cells (1,1)…(5,5)).
-- One step in any of **8 directions** (diagonals allowed) per turn, or STAY.
-- Turn order: **thief moves first**, then cop, alternating.
-- Capture = cop and thief share a cell (cop wins). Thief surviving the move cap = thief wins.
+- **Inter-group bonus board: 8×8** (re-frozen with group ImreEyal). The mandatory **self-game
+  stays 5×5**; the §12 enhancement clause lets the two agents agree a larger board, and 8×8 moves
+  capture into the *contested* zone so a strong thief can survive (5×5/25 made every sub-game a
+  forced cop-win → a structural 75–75 tie). Scoring is unchanged (§12.2), so the grader schema is
+  intact — only the board/round budget changes.
+- Canonical frame **0-based, top-left, [row,col]**; our engine maps its own 1-based (x,y) via
+  `to_cell`/`from_cell`. **No staying** — every ply steps to one of the **8** neighbours.
+- Turn order: **thief moves first**, then cop, alternating. Capture = cop and thief share a cell
+  (cop wins); thief surviving the round cap = thief wins. **Barriers off.**
+- Start cells (8×8): **cop [0,0], thief [7,7]** (cop top-left, thief bottom-right — maximally
+  apart). On 5×5 the same convention is [0,0]/[4,4].
 
 ## 2. Subgame & series (PDF §4.1, §12.1)
-- Subgame: max **25 moves**.
-- Series: **6 subgames** with role swap — subgames **1–3**: Group A cop vs Group B thief;
-  subgames **4–6**: Group B cop vs Group A thief.
+- Subgame round cap: **12 rounds** for the 8×8 bonus (tunable ±3 if it still sweeps one way);
+  the self-game keeps **25**.
+- Series: **6 subgames** with role swap — subgames **0–2**: Group A (`group_1`) cop vs Group B
+  (`group_2`) thief; subgames **3–5**: Group B cop vs Group A thief. We are `group_2` → thief 0–2,
+  cop 3–5.
 
 ## 3. Barriers (PDF §4.3)
 - Cop may place **≤ 5 barriers per subgame** on its own cell (impassable for both; costs the

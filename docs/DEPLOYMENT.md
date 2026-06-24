@@ -203,8 +203,10 @@ re-run to force a fresh consent.
 - **Pairing is arranged out-of-band first** (WhatsApp/phone): you agree to play, then
   **exchange tokens and URLs**. The token is the access control — delete/rotate it to cut
   the other side off.
-- **Role split (PDF §12.1):** 6 subgames — 3 with **your cop vs. their thief**, then 3
-  with **your thief vs. their cop**.
+- **Role split (PDF §12.1):** 6 subgames — subgames **1–3: Group A (group_1) cop vs Group B
+  (group_2) thief**, then **4–6** with the roles swapped. In our run we are **group_2
+  (anrbj666)** with group_1 = ImreEyal, so we play **thief in 1–3 and cop in 4–6**. Both teams
+  derive `totals_by_group`/`bonus_claim` from this single schedule, so it must match exactly.
 - **Autonomous result reporting:** at the end of the 6 subgames **each team emails its own
   JSON report** to the course address. The grader **compares the two reports by group
   name**; the bonus counts **only if both reports agree exactly** — any mismatch or
@@ -245,10 +247,10 @@ free Cloudflare account + named tunnel if you want a fixed URL.
 
 ## 5. Security checklist before going public
 
-- [ ] `COPTHIEF_MCP_TOKEN` set to a strong value; the servers enforce it as a
+- [x] `COPTHIEF_MCP_TOKEN` set to a strong value; the servers enforce it as a
       transport-level **bearer token** (`Authorization: Bearer <token>`), and the
       orchestrator sends it automatically. A wrong/absent token returns **401**.
       Rotate the token to revoke access instantly.
-- [ ] No secrets committed (`.env`, `client_secret.json`, `token.json` are git-ignored).
-- [ ] MCP URLs reachable over HTTPS; non-standard inbound ports avoided where possible.
-- [ ] LLM keys only in environment variables, never in source or config.
+- [x] No secrets committed (`.env`, `client_secret.json`, `token.json` are git-ignored).
+- [x] MCP URLs reachable over HTTPS; non-standard inbound ports avoided where possible.
+- [x] LLM keys only in environment variables, never in source or config.

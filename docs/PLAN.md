@@ -71,7 +71,8 @@ decides the move (strategy) and verbalises it (LLM), then calls the agent server
 
 - **MCP tools (pure, per agent server):** `reset(x,y,barriers_left)`, `observe()`,
   `move(dx,dy)`, `place_barrier()`, `note(message)`, `deliver_message(text)` (inter-group
-  free-text channel) — no LLM inside the server.
+  free-text channel) and `inbox()` (full ordered mailbox the peer loop polls) — no LLM inside
+  the server.
 - **LLMProvider.complete(system, user) -> str** — the only LLM contract (client side).
 - **Audit line schema** — `{ts, event, ...fields}` JSON per line.
 - **Report JSON** — sections 9.1 (internal) and 9.2 (bonus) of the assignment.
