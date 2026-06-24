@@ -36,9 +36,7 @@ team:
   group_name: "anrbj666"     # course group ID code (used to match inter-group reports)
   students:
     - name: "Alon Engel"
-      id: "208015032"
     - name: "Renat Karimov"
-      id: "324511369"
   github_repo: "https://github.com/alonengel/Dual-Agent-MCP"
   timezone: "Asia/Jerusalem"
 
