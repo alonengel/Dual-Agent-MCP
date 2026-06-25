@@ -8,8 +8,9 @@ to `eps_end`. Every `eval_every` games the greedy cop is measured against the he
 so the learning curve is directly comparable to what is being trained.
 
 Games run on a deliberately tight clock (small board, few rounds) so the cop cannot win by
-default — a better-learned policy captures more often. (Q-learning tops out near the greedy
-ceiling here; an edge/barrier-aware state was tested and *regressed* it — see README §9.1.)
+default — a better-learned policy captures more often. The Q-state is compact but board-aware
+(see :mod:`copthief.strategy.qlearning`); it improves on an offset-only state but still trails
+the lookahead minimax — full analysis in README §9.1.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ class TrainConfig:
     grid: int = 5
     rounds: int = 4          # tight clock: the cop must capture quickly, so skill shows
     max_barriers: int = 5
-    learning_rate: float = 0.2
+    learning_rate: float = 0.1  # steadier convergence for the larger board-aware Q-table
     discount: float = 0.9
     eps_start: float = 0.5
     eps_end: float = 0.02

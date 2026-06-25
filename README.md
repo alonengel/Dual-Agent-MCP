@@ -216,9 +216,10 @@ shape the cop's pursuing tone and the thief's evasive tone.
 - **Heuristic:** Chebyshev distance with cornering (cop) / open-cell (thief) tie-breaks.
   Barriers are *need-based* (≤5/subgame) — rarely the best move on an open 5×5.
 - **Tabular Q-learning (optional):** ε-greedy with the Bellman update
-  `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards. **Trained vs a
-  fixed heuristic** ([`scripts/train_qtable.py`](scripts/train_qtable.py), see §9.1): rises to
-  ~46% vs the heuristic thief — past the 36% heuristic cop, short of the 66% lookahead ceiling.
+  `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards, with a
+  **compact board-region state** (offset × 3×3 region) so it can learn to corner. **Trained
+  vs a fixed heuristic** ([`scripts/train_qtable.py`](scripts/train_qtable.py), see §9.1):
+  ~0.40 vs the heuristic thief — past the 0.36 heuristic cop, short of the 0.66 lookahead ceiling.
 
 **Quantified** by [`scripts/strategy_arena.py`](scripts/strategy_arena.py) (head-to-head,
 no LLM, perfect info). On an 8×8 with a tight 6-round clock (so the thief can actually win),
@@ -270,32 +271,39 @@ The optional Q-learning agents are **trained against a fixed heuristic opponent*
 reinforcement learning, not LLM fine-tuning — over many fast, keyless engine games with ε
 annealed from explore to exploit ([`src/copthief/training.py`](src/copthief/training.py), CLI
 [`scripts/train_qtable.py`](scripts/train_qtable.py)). On a tight 5×5/4-round clock (so the
-cop cannot win by default), the greedy cop rises from a ~1% untrained baseline toward **~46%**
-(by ~20k games) — past the **36%** scored by the hand-written heuristic cop:
+cop cannot win by default), the greedy cop rises from a ~1% untrained baseline to **~0.38–0.40**
+vs a heuristic thief, past the **0.36** hand-written heuristic cop:
 
 ![Q-learning training curve](assets/training_curve.png)
 
 ```bash
-uv run python scripts/train_qtable.py --games 20000       # saves Q-tables + assets/training_curve.png
+uv run python scripts/train_qtable.py --games 200000 --eval-every 20000   # saves Q-tables + PNG
 ```
 
-**What raises the ceiling — a tested negative result.** The win-rate plateaus well below the
-**66%** that the depth-1 lookahead minimax reaches on the same clock (`strategy_arena.py`,
-`--grid 5 --rounds 4`). The intuitive fix — a richer, **edge/barrier-aware state** (add an
-8-bit mask of which neighbours are blocked) — was implemented and A/B-tested against the
-offset-only state at matched settings. It **regressed** the cop (≈0.46 → ≈0.32): the 256×
-larger state is far too sparse to fill, and the distance-shaped reward gives no signal to
-*use* the wall information (cornering), so it only dilutes the data. It was reverted. The real
-lever here is **adversarial lookahead** (the default `lookahead` policy, 0.66), not Q-state
-size; tabular Q-learning with a greedy reward tops out near the greedy ceiling. (Honest
-finding, kept per the lecture's "document what you tried" guidance.)
+**The state is the lever — a documented experiment.** With an **offset-only** state (just the
+opponent's relative cell) the Q-cop converges to ≈ the heuristic (~0.35) — same policy class,
+no notion of *where on the board* it is, so it cannot learn to corner. We tried two richer
+states A/B against it at matched settings:
 
 | Cop policy (5×5 / 4-round, vs heuristic thief) | Win-rate |
 |---|---|
 | Heuristic | 0.36 |
-| Q-learning (offset-only state) | ~0.46 |
-| Q-learning (edge/barrier-aware state) — *regressed, reverted* | ~0.32 |
+| Q-learning, **offset-only** state | ~0.35 |
+| Q-learning, **full 8-bit blocked-neighbour mask** — *regressed, reverted* | ~0.32 |
+| Q-learning, **compact board-region state** (kept) | ~0.40 (best seed ~0.57) |
 | **Lookahead minimax (default)** | **0.66** |
+
+- The **full blocked-neighbour mask** (256× more states) *regressed* it (~0.32): far too sparse
+  to fill, so it just dilutes the data.
+- The **compact board-region state** — offset × which 3×3 region the rival occupies (49×9 = 441
+  states) — *helps* (~0.40 mean, up to ~0.57): small enough to fill, board-aware enough to
+  start cornering. So the lever really is a *richer-but-learnable* state, not a bigger one.
+
+It still falls short of the **0.66** that the depth-1 **lookahead minimax** reaches on the same
+clock (`strategy_arena.py --grid 5 --rounds 4`): tabular Q is high-variance here and cannot
+represent multi-step cornering. **For a strong cop, use the default `lookahead`;** Q-learning
+demonstrates the RL pipeline and the state-richness lesson. (Kept per the lecture's "document
+what you tried" guidance.)
 
 **Visual proof** — four complementary views (one of them a real-time graphical GUI). The
 **live CLI** (`selfplay --verbose`) prints the board and the agents' free-language dialogue

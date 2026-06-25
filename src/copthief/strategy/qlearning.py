@@ -1,7 +1,10 @@
 """Tabular Q-learning strategy (epsilon-greedy + Bellman update).
 
-This mirrors the minimal Q-table example from the assignment. State is the
-clipped relative position of the opponent; actions are the legal step directions.
+The state is **compact but board-aware**: the opponent's clipped relative offset (where it
+is *relative to me*) combined with which 3x3 board region the opponent occupies (where it is
+*on the board*). The region lets the policy learn to corner the rival against walls — which a
+relative-offset-only state cannot express — while staying small enough to fill (49 x 9 = 441
+states), unlike a full per-neighbour blocked mask. Actions are the 8 step directions.
 """
 
 from __future__ import annotations
@@ -15,11 +18,12 @@ from copthief.domain.board import Board
 from copthief.domain.models import Move, Observation, Position
 from copthief.strategy.base import Strategy
 
-_REL = 3  # relative-coordinate clip: dx,dy in [-_REL, _REL] -> 7 buckets each
+_REL = 3      # relative-coordinate clip: dx,dy in [-_REL, _REL] -> 7 buckets each
+_REGIONS = 9  # 3x3 board regions the opponent can occupy (its position relative to walls)
 
 
 class QTableStrategy(Strategy):
-    """Learns action values online via the Bellman equation."""
+    """Learns action values online via the Bellman equation (board-region-aware state)."""
 
     def __init__(self, learning_rate: float, discount_factor: float, epsilon: float,
                  rng: random.Random | None = None):
@@ -29,19 +33,27 @@ class QTableStrategy(Strategy):
         self.rng = rng or random.Random()
         self.directions = ((0, 1), (0, -1), (1, 0), (-1, 0),
                            (1, 1), (1, -1), (-1, 1), (-1, -1))
-        self.q = np.zeros(((2 * _REL + 1) ** 2, len(self.directions)))
+        self._offsets = (2 * _REL + 1) ** 2
+        self.q = np.zeros((self._offsets * _REGIONS, len(self.directions)))
         self._last: tuple[int, int] | None = None
 
-    def _state_index(self, here: Position, opponent: Position) -> int:
-        """Encode clipped relative opponent offset into a flat state index."""
+    def _region(self, pos: Position, board: Board) -> int:
+        """Which 3x3 board region ``pos`` falls in (its coarse position relative to walls)."""
+        rx = min(2, (pos.x - board.origin) * 3 // board.width)
+        ry = min(2, (pos.y - board.origin) * 3 // board.height)
+        return rx * 3 + ry
+
+    def _state_index(self, here: Position, opponent: Position, board: Board) -> int:
+        """Encode (clipped relative offset, opponent board region) into a flat index."""
         dx = max(-_REL, min(_REL, opponent.x - here.x)) + _REL
         dy = max(-_REL, min(_REL, opponent.y - here.y)) + _REL
-        return dx * (2 * _REL + 1) + dy
+        offset = dx * (2 * _REL + 1) + dy
+        return offset * _REGIONS + self._region(opponent, board)
 
     def decide(self, obs: Observation, opponent: Position, board: Board) -> Move:
         """Choose a direction epsilon-greedily, biased to legal cells."""
         here = obs.self_pos
-        state = self._state_index(here, opponent)
+        state = self._state_index(here, opponent, board)
         order = list(range(len(self.directions)))
         if self.rng.random() >= self.epsilon:
             order.sort(key=lambda a: self.q[state, a], reverse=True)

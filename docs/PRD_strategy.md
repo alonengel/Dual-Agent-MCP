@@ -51,12 +51,16 @@ Implements the assignment's minimal Q-table with the Bellman update:
 Q(s,a) ← Q(s,a) + α · [ r + γ · maxₐ′ Q(s′,a′) − Q(s,a) ]
 ```
 
-- **State `s`:** the clipped relative offset of the opponent (`dx,dy ∈ [-3,3]`),
-  giving a compact 49-state table per agent.
+- **State `s`:** the clipped relative offset of the opponent (`dx,dy ∈ [-3,3]`) **×** which
+  3×3 board region the opponent occupies — a compact but board-aware 49×9 = 441-state table.
+  The region lets the policy learn to corner against walls; an offset-only state converges to
+  ≈ the heuristic, and a full per-neighbour blocked mask was too sparse (see REPORT §9.1).
 - **Action `a`:** one of 8 step directions.
 - **Reward `r`:** distance-shaped — the cop is rewarded for closing in, the thief for
   fleeing; capture yields ±10 (`shaped_reward`).
 - **Policy:** ε-greedy exploration/exploitation, biased toward legal cells.
+- **Trained** vs a fixed heuristic by `scripts/train_qtable.py`: ~0.40 cop win-rate (best
+  ~0.57), past the 0.36 heuristic but short of the 0.66 lookahead minimax (REPORT §9.1).
 - **Hyperparameters (config):** `learning_rate=0.1`, `discount_factor=0.9`,
   `epsilon=0.1` — all read from `config/config.yaml`, never hardcoded.
 
