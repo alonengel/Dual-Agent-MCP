@@ -51,5 +51,6 @@ professional-software guidelines (section 8.3, "Prompt Book").
 
 - **Prompt intent:** "Write unit + integration tests mirroring `src/`, mock external
   HTTP/LLM, reach ≥85% coverage; keep every file ≤150 lines and ruff-clean."
-- **Outcome:** 67 tests, ~97% coverage; HTTP providers tested via monkeypatched
-  transport; the networked client driven by a mocked `NetworkMatch` in the SDK test.
+- **Outcome:** ~137 tests, ~96% coverage; HTTP providers tested via monkeypatched
+  transport; interop split into `test_interop.py`, `test_peer_loop.py`, `test_peer_series.py`
+  (each ≤150 lines); the networked client driven by a mocked `NetworkMatch` in the SDK test.

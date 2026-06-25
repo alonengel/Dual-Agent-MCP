@@ -20,6 +20,23 @@ over HTTP; an **MCP client / orchestrator** owns the LLM, drives the dialogue, a
 as the authoritative referee. The system runs fully locally (Level 1), is cloud-deployable
 (Level 2), and supports inter-group competition (Level 3).
 
+### 1.1 Extensions beyond the assignment PDF
+
+The PDF mandates a working MCP pipeline and free-language play; we added the following
+**original** work (for excellence-tier grading — extensions, not replacements):
+
+| Extension | Why |
+|-----------|-----|
+| **DecPOMDP partial observation** (`vision_radius`, conditional disclosure) | Makes the pursuit genuinely partially observable; agents negotiate radius in inter-group play |
+| **Deception + counter-intelligence** | Thief mirror-decoy lies; cop verifies once then ignores a proven liar |
+| **Blind hunt / evasion** | Cop sweeps after last-seen; thief flees to open cells — competent play under hidden rival |
+| **Board-size sensitivity study** | Notebook + table showing balance emerges on larger boards (self-game stays 5×5) |
+| **Additive `interop/` adapter** | Level 3 without touching §5.2 core: `deliver_message`/`inbox`, commit-reveal audit, `SG:<index>` framing, two-phase report hash |
+| **Collaborative bonus re-freeze** | With ImreEyal: 5×5→8×8, round-cap tuning (12/15→7) to break structural ties while keeping §12.2 scoring |
+| **Named Cloudflare tunnel + ngrok post-mortem** | Reliable public MCP; documented why free ngrok failed mid-match (`docs/archive/ngrok.md`) |
+| **Agent strategy skills** | `.claude/skills/` — cop/thief/protocol guides for consistent LLM behaviour |
+| **Measured cost ledger** | [`docs/COST.md`](docs/COST.md): CLI $0, API ~$0.15/6 games (Opus 4.8), Gmail free |
+
 ## 2. Problem framing — a DecPOMDP
 
 The pursuit is a **Decentralized, Partially Observable Markov Decision Process**, formally

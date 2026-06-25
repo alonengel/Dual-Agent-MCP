@@ -57,7 +57,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
       Claude CLI subscription is the primary path; the API key is only a fallback)
 
 ## Software-excellence compliance (guidelines V3 — §17 final checklist)
-- [x] **Docs**: README (user manual + report), PRD (KPIs), PLAN (C4 + 6 ADRs), TODO, PRD_strategy, PROMPTS (§2)
+- [x] **Docs**: README (user manual + report), PRD (KPIs), PLAN (C4 + 6 ADRs), TODO, PRD_strategy, PROMPTS, **COST** (guidelines §11), DEPLOYMENT (§2)
 - [x] **Code**: modular, files ≤150 lines, docstrings explain *why*, consistent style (§3)
 - [x] **Architecture**: single SDK entry point; OOP + Template Method, no duplication (§4)
 - [x] **API gatekeeper**: per-minute **and** per-hour throttle, retries, `get_queue_status` (§5)
