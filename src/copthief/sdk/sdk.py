@@ -35,23 +35,46 @@ class CopThiefSDK:
         # One shared gatekeeper + usage meter for every external LLM call.
         self.gate, self.meter = build_llm_clients(self.config)
 
-    def _build_agent(self, role: Role) -> Agent:
-        """Construct an agent with its own strategy instance and LLM voice."""
+    def _build_agent(self, role: Role, llm_moves: bool = True) -> Agent:
+        """Construct an agent with its own strategy instance and LLM voice.
+
+        ``llm_moves=False`` lets the (strong) strategy decide every move while the LLM still
+        voices the turn — used for a demo of best-strategy play with real dialogue.
+        """
         strategy = build_strategy(self.config.section("strategy"), self.rng)
+        self._load_trained_weights(strategy, role)
         provider = build_provider(self.config.section("llm"), self.gate, self.meter)
-        return Agent(role, strategy, provider)
+        return Agent(role, strategy, provider, llm_moves=llm_moves)
+
+    def _load_trained_weights(self, strategy: Any, role: Role) -> None:
+        """If a trained linear policy is configured, load this role's weights (greedy in play)."""
+        from copthief.strategy.linear_q import LinearQStrategy
+
+        if not isinstance(strategy, LinearQStrategy):
+            return
+        key = "cop_weights" if role is Role.COP else "thief_weights"
+        rel = self.config.get(f"strategy.linearq.{key}", "")
+        path = self.config.root / rel if rel else None
+        if path and path.exists():
+            import numpy as np
+
+            strategy.weights = np.load(path)
+            strategy.epsilon = 0.0  # exploit the trained policy in live play
+            self.logger.info("loaded trained linear %s weights from %s", role.value, rel)
 
     def run_self_play(self, games: int | None = None,
                       reporter: Callable[[str], None] | None = None,
-                      board_render: Callable[[Subgame], str] | None = None) -> dict[str, Any]:
+                      board_render: Callable[[Subgame], str] | None = None,
+                      llm_moves: bool = True) -> dict[str, Any]:
         """Run a local self-game and return the match result dict.
 
         ``games`` overrides the configured subgame count (handy for short demos);
         ``reporter`` receives human-readable progress for live dialogue output;
-        ``board_render`` turns each turn's state into a live board for the terminal.
+        ``board_render`` turns each turn's state into a live board for the terminal;
+        ``llm_moves=False`` makes the strategy decide moves (LLM still voices).
         """
-        cop = self._build_agent(Role.COP)
-        thief = self._build_agent(Role.THIEF)
+        cop = self._build_agent(Role.COP, llm_moves=llm_moves)
+        thief = self._build_agent(Role.THIEF, llm_moves=llm_moves)
         game_cfg = self.config.section("game")
         if games is not None:
             game_cfg = {**game_cfg, "num_games": games}

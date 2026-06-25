@@ -58,6 +58,8 @@ def main() -> int:
     parser.add_argument("--games", type=int, default=None,
                         help="override subgame count (e.g. 2 for a short demo)")
     parser.add_argument("--quiet", action="store_true", help="suppress live dialogue output")
+    parser.add_argument("--strategy-moves", action="store_true",
+                        help="let the strategy decide moves (best play); the LLM still voices")
     args = parser.parse_args()
 
     sdk = CopThiefSDK(seed=args.seed)
@@ -65,7 +67,8 @@ def main() -> int:
     sdk.audit.path.write_text("", encoding="utf-8")
     reporter = None if args.quiet else functools.partial(print, flush=True)
     board = None if args.quiet else render_live
-    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
+    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board,
+                              llm_moves=not args.strategy_moves)
     sdk.report_and_save(match)
 
     root = sdk.config.root

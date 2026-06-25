@@ -70,7 +70,7 @@ strategy:
   # heuristic (greedy distance) | adaptive (linear anticipation) |
   # lookahead (depth-1 minimax: acts vs the opponent's best reply — strongest, default) |
   # belief (lookahead over a Bayes-filtered probability grid — best under partial vision) |
-  # qtable (tabular Q-learning)
+  # qtable (tabular Q-learning) | linearq (linear afterstate features — RL, beats lookahead)
   kind: "lookahead"
   cop_uses_barriers: true    # cop uses barriers only when it cannot advance (need-based)
   qtable:
@@ -80,3 +80,8 @@ strategy:
   belief:
     claim_discount: 0.4      # how strongly a free-text claim shifts the belief grid (0..1)
     sight_radius: 1          # rival within this Chebyshev range is a confirmed sighting (collapse)
+  linearq:
+    # Trained weights, auto-loaded per role when present (else the policy is untrained zeros).
+    # Generate with: uv run python scripts/train_qtable.py --policy linear
+    cop_weights: "results/linear_cop.npy"
+    thief_weights: "results/linear_thief.npy"
