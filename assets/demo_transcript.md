@@ -2,200 +2,121 @@
 
 ## Protocol negotiation
 
-- **cop**: Understood — let's settle this on a 5×5 grid with origin (1,1), turns alternating and you, thief, moving first; I've got the rules down cold, so make your move and I'll be right behind you.
-- **thief**: Catch me if you can, Officer—let's settle this on a 5x5 grid with origin (1,1), turn-based and thief moving first, and yes, I know the rules perfectly.
+- **cop**: "I've got my eyes on this 5×5 board with corners running from (1,1) to (5,5), so make your move first and I'll be right behind you — I understand the rules."
+- **thief**: Sounds good, Officer—let's run it on a 5×5 grid, origin (1,1), turn-based with me stepping first, and I've got the rules down cold.
 
 ## Subgame 1 (cop (4, 5), thief (2, 3))
 
-- **thief** (move 0): Nice try, officer, but I'm already slipping east and standing pretty at cell (4,4) — catch me if you can.
-- **cop** (move 1): Steady on, friend—I've just moved up to cell (4,4), and I'm closing the distance.
-- **thief** (move 1): Nice try closing in, officer, but I just slipped diagonally to cell (4,4) and I'm still one step ahead of you.
+- **thief** (move 0): Nice try closing in, but I've just slipped west to cell (5,3) and I'm only getting harder to catch.
+- **cop** (move 1): I hear you, thief, but every street you breathe on is already mine—I'm sliding northward and the gap is closing.
+- **thief** (move 1): Heard you closing in, but I've already slipped north to cell (5,2) and I'm not slowing down.
+- **cop** (move 2): Heard your bluff, little shadow—I'm sliding up and to the right, and the gap between us is closing.
+- **thief** (move 2): Nice try closing in, officer, but I've just slipped north to cell (5,3) and I'm not done running.
+- **cop** (move 3): I'm drifting quietly westward now, and I can feel you getting closer with every step.
+- **thief** (move 3): Nice try, officer, but I've slipped north to (5,2) and I'm still a shadow you can't grab.
+- **cop** (move 4): I drift a step westward through the dark, thief—you're running out of room.
+- **thief** (move 4): I'm slipping north—away from your reach—and I'm now at cell (5,3).
+- **cop** (move 5): I hear you, but there's nowhere left to slip — I'm closing the gap and now stand at cell (2,2).
+- **thief** (move 5): Nice try closing in, officer, but I just slid diagonally and I'm now sitting pretty at cell (4,2).
+- **cop** (move 6): Heard your taunt, but I'm closing the gap and stepping north to cell (2,3) now.
+- **thief** (move 6): Nice guess, officer, but I've already slipped north and I'm standing right at (4,1) now.
+- **cop** (move 7): I see your move, thief, but you can't shake me—I'm stepping up to cell (2,4) and closing the gap.
+- **thief** (move 7): Nice try, officer, but I'm always one step ahead—I've just slipped to cell (3,4) and I'm still breathing free.
+- **cop** (move 8): Steady now—I've shifted one step east and I'm standing right at cell (3,4), closing the gap between us.
 
 _Result: cop_win — cop 20, thief 5_
 
-## Subgame 2 (cop (3, 3), thief (1, 5))
+## Subgame 2 (cop (1, 5), thief (4, 3))
 
-- **thief** (move 0): Nice try keeping pace, but you're a step behind—I've slipped over to cell (2,4) and I'm just getting warmed up.
-- **cop** (move 1): I hear you, and I'm closing the distance now—I've just stepped to cell (2,4).
-
-_Result: cop_win — cop 20, thief 5_
-
-## Subgame 3 (cop (4, 1), thief (4, 5))
-
-- **thief** (move 0): Nice try closing in, officer, but I just slipped north to cell (2,2) and I'm still a shadow you can't hold.
-- **cop** (move 1): I'm drifting northwest on a hunch, thief, and the gap between us is closing whether you feel it yet or not.
-- **thief** (move 1): Nice try closing in, officer, but I'm already slipping diagonally up to cell (1,1) and feeling untouchable.
-- **cop** (move 2): I hear you, but I'm sliding west and tightening the net with every step you take.
-- **thief** (move 2): Nice try closing in, officer, but I just slipped diagonally down to cell (2,2) and I'm still one step ahead of you.
-- **cop** (move 3): I hear you stalling, but I'm closing the distance and I'm now standing at cell (3,3).
-- **thief** (move 3): Nice try, officer, but I'm already slipping diagonally up to cell (1,1) before your net even tightens.
-- **cop** (move 4): Heard you, friend, but I'm closing the gap and stepping to cell (4,4) now.
-- **thief** (move 4): Nice try closing in, but I just slipped a step north to cell (5,4) and I'm still well out of your reach.
-- **cop** (move 5): I hear you scurrying off to the east, but I'm sliding one step right and standing now at cell (5,4)—closing the gap.
-
-_Result: cop_win — cop 20, thief 5_
-
-## Subgame 4 (cop (4, 4), thief (5, 1))
-
-- **thief** (move 0): Nice try closing in, but I've already slipped northwest and I'm standing right at (2,4).
-- **cop** (move 1): I hear you out there, and I'm sliding west to close the gap—nowhere left to run.
-- **thief** (move 1): Nice try closing in, officer, but I've just slipped over to cell (1,3) and I'm still a step ahead of you.
-- **cop** (move 2): I hear you, but slipping west is exactly where I'm tightening the net—keep talking while I close in.
-- **cop**: As the cop, propose playing on a 5x5 grid with origin 1, turn-based with the thief moving first, and confirm you understand the rules.
-- **thief**: As the thief, propose playing on a 5x5 grid with origin 1, turn-based with the thief moving first, and confirm you understand the rules.
-
-## Subgame 1 (cop (2, 4), thief (4, 5))
-
-- **thief** (move 0): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (3,5); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=1 dy=1 and state plainly that you are now at cell (3,5); this is move 1 of 25.
+- **thief** (move 0): Nice try closing in, officer, but I've just slid east to cell (1,3) and I'm only getting started.
+- **cop** (move 1): Heard you—I'm sliding a row northward and tightening the net, so enjoy the open air while it lasts.
+- **thief** (move 1): Nice try, officer, but I just slipped north to cell (1,2) and I'm still one shadow ahead of you.
+- **cop** (move 2): Heard you loud and clear—I'm tightening the net from the north, and there's nowhere up that road you can hide.
+- **thief** (move 2): Nice try closing in, officer, but I've just slipped north to cell (1,3) and I'm not done running.
+- **cop** (move 3): I hear you running, but I'm already cutting toward the northeast to close the gap — there's nowhere left to hide.
+- **thief** (move 3): Nice try, officer, but I'm already slipping north to cell (1,2) while you chase shadows.
+- **cop** (move 4): Heard you loud and clear—I'm pressing one row north and tightening the net around you.
+- **thief** (move 4): Nice try, officer, but I just slipped a step south and I'm standing at cell (1,3) now—still out of your reach.
+- **cop** (move 5): I hear you scurrying, but I'm closing the gap from the south and pressing steadily northward—there's nowhere up there I won't follow.
+- **thief** (move 5): Nice try closing in, but I'm slipping north to cell (1,2) before you even blink.
+- **cop** (move 6): I hear you scurrying, little shadow — I'm sliding up and to the east, and the gap between us just got thinner.
+- **thief** (move 6): Heard you closing in, officer, but I just slipped north to cell (1,3) and I'm still one step ahead of you.
+- **cop** (move 7): I hear you, but the chase tightens—I'm stepping to cell (4,2) now, and there's nowhere left for you to slip away.
+- **thief** (move 7): Nice try closing in, officer, but I just slipped northwest to cell (2,2) and I'm still one step ahead of you.
+- **cop** (move 8): Steady as ever, I'm closing the gap and stepping up to cell (4,3) now.
+- **thief** (move 8): Nice try closing in, but I've slipped north and I'm standing right at (2,1) now.
+- **cop** (move 9): I hear you keeping your distance, but I'm stepping north to (4,4) and the gap is closing.
+- **thief** (move 9): Nice try closing in, officer, but I just slipped southwest to cell (3,4) and I'm still one step ahead of you.
+- **cop** (move 10): Heard you, and I'm closing the gap — sliding one step west to settle plainly at cell (3,4).
 
 _Result: cop_win — cop 20, thief 5_
 
-## Subgame 2 (cop (3, 2), thief (5, 4))
+## Subgame 3 (cop (5, 1), thief (3, 2))
 
-- **thief** (move 0): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=-1 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 1 of 25.
-- **thief** (move 1): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 2 of 25.
-- **cop** (move 2): As the cop, cop steps dx=-1 dy=0 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 2 of 25.
-- **thief** (move 2): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 3 of 25.
-- **cop** (move 3): As the cop, cop steps dx=0 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 3 of 25.
-- **thief** (move 3): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 4 of 25.
-- **cop** (move 4): As the cop, cop steps dx=0 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 4 of 25.
-- **thief** (move 4): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 5 of 25.
-- **cop** (move 5): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 5 of 25.
-- **thief** (move 5): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 6 of 25.
-- **cop** (move 6): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 6 of 25.
-- **thief** (move 6): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 7 of 25.
-- **cop** (move 7): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 7 of 25.
-- **thief** (move 7): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 8 of 25.
-- **cop** (move 8): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 8 of 25.
-- **thief** (move 8): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 9 of 25.
-- **cop** (move 9): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 9 of 25.
-- **thief** (move 9): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 10 of 25.
-- **cop** (move 10): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 10 of 25.
-- **thief** (move 10): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 11 of 25.
-- **cop** (move 11): As the cop, cop steps dx=1 dy=-1 and state plainly that you are now at cell (4,2); this is move 11 of 25.
-- **thief** (move 11): As the thief, thief steps dx=-1 dy=1 and state plainly that you are now at cell (2,2); this is move 12 of 25.
-- **cop** (move 12): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 12 of 25.
-- **thief** (move 12): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (2,1); this is move 13 of 25.
-- **cop** (move 13): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 13 of 25.
-- **thief** (move 13): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (3,1); this is move 14 of 25.
-- **cop** (move 14): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 14 of 25.
-- **thief** (move 14): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (2,1); this is move 15 of 25.
-- **cop** (move 15): As the cop, cop steps dx=0 dy=1 and state plainly that you are now at cell (5,4); this is move 15 of 25.
-- **thief** (move 15): As the thief, thief steps dx=-1 dy=-1 and state plainly that you are now at cell (3,2); this is move 16 of 25.
-- **cop** (move 16): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 16 of 25.
-- **thief** (move 16): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (4,2); this is move 17 of 25.
-- **cop** (move 17): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 17 of 25.
-- **thief** (move 17): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (5,2); this is move 18 of 25.
-- **cop** (move 18): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 18 of 25.
-- **thief** (move 18): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (5,3); this is move 19 of 25.
-- **cop** (move 19): As the cop, cop steps dx=-1 dy=-1 and state plainly that you are now at cell (2,2); this is move 19 of 25.
-- **thief** (move 19): As the thief, thief steps dx=1 dy=1 and state plainly that you are now at cell (4,2); this is move 20 of 25.
-- **cop** (move 20): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 20 of 25.
-- **thief** (move 20): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (4,1); this is move 21 of 25.
-- **cop** (move 21): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 21 of 25.
-- **thief** (move 21): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (3,1); this is move 22 of 25.
-- **cop** (move 22): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 22 of 25.
-- **thief** (move 22): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (2,1); this is move 23 of 25.
-- **cop** (move 23): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 23 of 25.
-- **thief** (move 23): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (3,1); this is move 24 of 25.
-- **cop** (move 24): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 24 of 25.
-- **thief** (move 24): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (2,1); this is move 25 of 25.
-- **cop** (move 25): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 25 of 25.
-
-_Result: thief_win — cop 5, thief 10_
-
-## Subgame 3 (cop (5, 5), thief (5, 3))
-
-- **thief** (move 0): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,4); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=0 dy=-1 and state plainly that you are now at cell (5,4); this is move 1 of 25.
+- **thief** (move 0): Nice try closing in, officer, but I've just slipped north to cell (3,5) and I'm only getting started.
+- **cop** (move 1): I hear you out there, and I'm drifting steadily northward to close the gap between us.
+- **thief** (move 1): Nice try closing in, officer, but I've already slipped east to cell (4,1) and I'm only getting harder to find.
+- **cop** (move 2): I hear you keeping your distance, but I'm closing in steadily — I've just stepped to cell (4,1) and I'm not letting up.
 
 _Result: cop_win — cop 20, thief 5_
 
-## Subgame 4 (cop (4, 2), thief (5, 1))
+## Subgame 4 (cop (5, 2), thief (4, 1))
 
-- **thief** (move 0): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,2); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=1 dy=0 and state plainly that you are now at cell (5,2); this is move 1 of 25.
-
-_Result: cop_win — cop 20, thief 5_
-
-## Subgame 5 (cop (4, 1), thief (1, 1))
-
-- **thief** (move 0): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,4); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 1 of 25.
-- **thief** (move 1): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,3); this is move 2 of 25.
-- **cop** (move 2): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 2 of 25.
-- **thief** (move 2): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,2); this is move 3 of 25.
-- **cop** (move 3): As the cop, cop steps dx=1 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 3 of 25.
-- **thief** (move 3): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (5,3); this is move 4 of 25.
-- **cop** (move 4): As the cop, cop steps dx=-1 dy=0 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 4 of 25.
-- **thief** (move 4): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (5,2); this is move 5 of 25.
-- **cop** (move 5): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 5 of 25.
-- **thief** (move 5): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (5,3); this is move 6 of 25.
-- **cop** (move 6): As the cop, cop steps dx=-1 dy=-1 and state plainly that you are now at cell (2,2); this is move 6 of 25.
-- **thief** (move 6): As the thief, thief steps dx=1 dy=1 and state plainly that you are now at cell (4,2); this is move 7 of 25.
-- **cop** (move 7): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 7 of 25.
-- **thief** (move 7): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (4,1); this is move 8 of 25.
-- **cop** (move 8): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 8 of 25.
-- **thief** (move 8): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (3,1); this is move 9 of 25.
-- **cop** (move 9): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 9 of 25.
-- **thief** (move 9): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (2,1); this is move 10 of 25.
-- **cop** (move 10): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 10 of 25.
-- **thief** (move 10): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (3,1); this is move 11 of 25.
-- **cop** (move 11): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 11 of 25.
-- **thief** (move 11): As the thief, thief steps dx=1 dy=0 and state plainly that you are now at cell (2,1); this is move 12 of 25.
-- **cop** (move 12): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 12 of 25.
-- **thief** (move 12): As the thief, thief steps dx=-1 dy=0 and state plainly that you are now at cell (3,5); this is move 13 of 25.
-- **cop** (move 13): As the cop, cop steps dx=1 dy=1 and state plainly that you are now at cell (3,5); this is move 13 of 25.
+- **thief** (move 0): Nice try, officer, but I've already slipped over to cell (3,4) where you'll never pin me down.
+- **cop** (move 1): I hear you keeping to the shadows, but I'm closing in and have just stepped to cell (4,3).
+- **thief** (move 1): Nice try staying close, officer, but I've slipped west and I'm standing at cell (4,4) now.
+- **cop** (move 2): I hear your footsteps, little thief — I'm drifting northwest, and the gap between us is closing.
+- **thief** (move 2): Nice try closing in, but I just slipped west and I'm standing at cell (5,4) now.
+- **cop** (move 3): Heard your bluff, thief—I'm closing in from the south and pushing straight north, so keep running.
+- **thief** (move 3): Nice try closing in, officer, but I'm slipping north to cell (5,3) and staying one step ahead of you.
+- **cop** (move 4): Heard you—I'm closing the distance and stepping diagonally to cell (2,2) now.
+- **thief** (move 4): Nice try closing in, officer, but I just slipped diagonally to cell (4,2) and I'm still one step ahead of you.
+- **cop** (move 5): I hear you holding your ground, but I'm closing the gap and I'm now standing at cell (2,3).
+- **thief** (move 5): Nice try closing in, officer, but I'm slipping north to cell (4,1) where you'll never pin me down.
+- **cop** (move 6): Steady as ever, thief—I'm closing the gap and now stand at cell (2,4).
+- **thief** (move 6): Nice try, officer, but I've already slipped northeast to cell (3,4) and I'm still one step ahead of you.
+- **cop** (move 7): Steady as you go—I've shifted one step east and I'm standing right at cell (3,4) now, closing the gap.
 
 _Result: cop_win — cop 20, thief 5_
 
-## Subgame 6 (cop (2, 3), thief (5, 5))
+## Subgame 5 (cop (1, 3), thief (4, 4))
 
-- **thief** (move 0): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,2); this is move 1 of 25.
-- **cop** (move 1): As the cop, cop steps dx=-1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 1 of 25.
-- **thief** (move 1): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 2 of 25.
-- **cop** (move 2): As the cop, cop steps dx=0 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 2 of 25.
-- **thief** (move 2): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 3 of 25.
-- **cop** (move 3): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 3 of 25.
-- **thief** (move 3): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 4 of 25.
-- **cop** (move 4): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 4 of 25.
-- **thief** (move 4): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 5 of 25.
-- **cop** (move 5): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 5 of 25.
-- **thief** (move 5): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 6 of 25.
-- **cop** (move 6): As the cop, cop steps dx=0 dy=1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 6 of 25.
-- **thief** (move 6): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 7 of 25.
-- **cop** (move 7): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 7 of 25.
-- **thief** (move 7): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (1,3); this is move 8 of 25.
-- **cop** (move 8): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 8 of 25.
-- **thief** (move 8): As the thief, thief steps dx=0 dy=1 and state plainly that you are now at cell (1,2); this is move 9 of 25.
-- **cop** (move 9): As the cop, cop steps dx=1 dy=-1 but do not reveal your coordinates — give only a vague direction or a taunt; this is move 9 of 25.
-- **thief** (move 9): As the thief, thief steps dx=0 dy=-1 and state plainly that you are now at cell (5,3); this is move 10 of 25.
-- **cop** (move 10): As the cop, cop steps dx=1 dy=1 and state plainly that you are now at cell (5,3); this is move 10 of 25.
-
-_Result: cop_win — cop 20, thief 5_
-- **thief** (move 2): Nice try closing in, officer, but I've already slipped west to cell (2,3) and I'm not done dancing yet.
-- **cop** (move 3): I hear you well enough, and I'm closing the gap one diagonal step at a time—you can't keep slipping toward the far corner forever.
-- **thief** (move 3): Nice try closing in, officer, but I've just slipped over to cell (3,4) and I'm still one step ahead of you.
-- **cop** (move 4): I hear you scurrying north, but I'm closing in and just stepped up to cell (3,4).
+- **thief** (move 0): Nice try, officer, but I've already slipped north to cell (2,1) and I'm just getting warmed up.
+- **cop** (move 1): I can feel you slipping toward the upper-right corner, but I'm cutting across the diagonal and closing in fast.
+- **thief** (move 1): Nice try, officer, but I've already slipped west to (3,1) while you were still talking.
+- **cop** (move 2): I'm closing the distance, slipping quietly southward, and there's nowhere left for you to hide.
+- **thief** (move 2): Nice try closing in, officer, but I've just slipped east to cell (2,1) and I'm only getting harder to hold.
+- **cop** (move 3): Heard your little boast — I'm closing the gap and drifting steadily northward, so enjoy the view while it lasts.
+- **thief** (move 3): Nice try closing in, but I've just slipped west to cell (3,1) and I'm still a step ahead of you.
+- **cop** (move 4): Heard you scurrying off, but I'm climbing steadily northward and the gap is closing.
+- **thief** (move 4): Nice try, officer, but I'm slipping east to cell (2,1) and staying one step ahead of you.
+- **cop** (move 5): I hear you scurrying, little shadow, but I'm sliding one row higher and tightening the net around you.
+- **thief** (move 5): Nice try closing in, but I just slipped west to cell (3,5) and I'm still one shadow ahead of you.
+- **cop** (move 6): I hear your taunt, but the net is tightening—I've just stepped to cell (3,5), and I can feel you getting closer.
 
 _Result: cop_win — cop 20, thief 5_
 
-## Subgame 5 (cop (5, 1), thief (1, 3))
+## Subgame 6 (cop (1, 1), thief (4, 5))
 
-- **thief** (move 0): You'll have to be quicker than that, officer, because I've just slipped east to cell (4,3).
-- **cop** (move 1): I'm closing in from your upper-left now, little thief, and there's nowhere these streets can hide you.
-- **thief** (move 1): Nice try, officer, but I'm slipping east to cell (3,3) and staying one step ahead of you.
-- **cop** (move 2): I close the distance steadily as I slide to cell (3,3), and there's nowhere left for you to hide.
-
-_Result: cop_win — cop 20, thief 5_
-
-## Subgame 6 (cop (4, 2), thief (1, 1))
-
-- **thief** (move 0): Nice try, but you'll have to be quicker than that—I'm slipping diagonally up to cell (4,4) and I'm only just getting started.
-- **cop** (move 1): I hear you out there, and I'm already drifting steadily northward to close the gap between us.
-- **thief** (move 1): Nice try, officer, but I've already slipped diagonally and I'm standing right at (3,3)—come get me.
-- **cop** (move 2): I hear your footsteps echoing nearby, and I'm closing the gap as I slide west to cell (3,3).
+- **thief** (move 0): Nice try, officer, but I just slipped one step west and I'm standing at cell (3,1)—catch me if you can.
+- **cop** (move 1): I hear you, thief, but every step you take east is one step closer to me—I'm closing the distance now.
+- **thief** (move 1): Nice try closing in, but I'm slipping east to cell (2,1) where you'll never pin me down.
+- **cop** (move 2): Heard you scurry, little thief—I'm sliding east on your trail and the gap is closing.
+- **thief** (move 2): Nice try closing in, officer, but I just slipped west and I'm standing at (3,1) now.
+- **cop** (move 3): I hear you stalling, but I'm already drifting up and to my left, tightening the gap with every step.
+- **thief** (move 3): Nice try closing in, officer, but I just slid east to cell (2,1) and I'm still slipping right through your fingers.
+- **cop** (move 4): Heard your little boast, but I'm drifting steadily northward now and the gap between us is closing.
+- **thief** (move 4): Nice try closing in, but I've already slipped west to cell (3,1) and I'm not slowing down.
+- **cop** (move 5): I hear you scrambling, but there's nowhere left to run — I'm stepping up to cell (2,4) and closing the gap.
+- **thief** (move 5): Nice try closing in, officer, but I just slipped diagonally up and to the right—I'm standing at (2,2) now and still loving the chase.
+- **cop** (move 6): Heard you, runner — I'm closing the gap and I'm standing right at (3,3) now.
+- **thief** (move 6): Nice try closing in, officer, but I'm already slipping north to cell (2,1) where you'll never pin me down.
+- **cop** (move 7): I hear your bravado, but I'm already sliding up and to the east, tightening the net with every step.
+- **thief** (move 7): Nice try closing in, officer, but I've just slipped west to cell (3,1) and I'm still one step ahead of you.
+- **cop** (move 8): Heard you scurrying, little thief — I'm pressing steadily northward and the gap is closing.
+- **thief** (move 8): You'll have to be quicker than that, officer — I'm slipping east to cell (2,1) and still nowhere near your reach.
+- **cop** (move 9): I hear you weaving through the alleys, but I'm closing in and now standing right at cell (4,4).
+- **thief** (move 9): Nice try closing in, officer, but I've just slipped down to cell (3,4) and I'm still one step ahead of you.
+- **cop** (move 10): I hear you sidestepping, but I'm closing the gap—shifting one step west to cell (3,4) now.
 
 _Result: cop_win — cop 20, thief 5_
