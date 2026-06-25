@@ -68,11 +68,15 @@ reporting:
 
 strategy:
   # heuristic (greedy distance) | adaptive (linear anticipation) |
-  # lookahead (depth-1 minimax: acts vs the opponent's best reply — strongest, default) |
+  # lookahead (depth-1 minimax: acts vs the opponent's best reply — fast default) |
+  # minimax (depth-N game-tree search: solves the 5x5/4-round game — strongest) |
   # belief (lookahead over a Bayes-filtered probability grid — best under partial vision) |
   # qtable (tabular Q-learning) | linearq (linear afterstate features — RL, beats lookahead)
   kind: "lookahead"
   cop_uses_barriers: true    # cop uses barriers only when it cannot advance (need-based)
+  minimax:
+    depth: 8   # plies of full-tree search; >=6 forces capture from every 5x5/4-round start
+               # (README §9.1). Keep even; the search is sub-millisecond per move on 5x5.
   qtable:
     learning_rate: 0.1
     discount_factor: 0.9
