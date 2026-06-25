@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+import matplotlib
 
-from copthief.gui.board_draw import draw_board
+matplotlib.use("Agg")  # headless PNG rendering (set before pyplot is imported)
+import matplotlib.pyplot as plt  # noqa: E402
+
+from copthief.gui.board_draw import draw_board  # noqa: E402
 
 
 def _turns_for_subgame(audit_path: Path, index: int | None) -> list[dict]:

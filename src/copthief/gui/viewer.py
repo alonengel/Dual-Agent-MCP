@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+import matplotlib
 
-from copthief.gui.board_draw import draw_board, legend_handles
+matplotlib.use("Agg")  # headless PNG rendering (set before pyplot is imported)
+import matplotlib.pyplot as plt  # noqa: E402
+
+from copthief.gui.board_draw import draw_board, legend_handles  # noqa: E402
 
 
 def _read_turns(audit_path: Path) -> list[dict]:

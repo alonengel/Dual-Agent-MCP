@@ -3,6 +3,7 @@
 Writes to assets/:
   * board.png                 - final board snapshot (single frame)
   * demo_filmstrip_sg{N}.png  - every move of subgame N as a montage (one per subgame)
+  * demo_animation.gif        - the whole game as a moving animation (real-time GUI proof)
   * demo_transcript.md        - the agents' natural-language dialogue, move by move
 
 Usage:  uv run python scripts/capture_demo.py [--seed N]
@@ -15,10 +16,15 @@ import functools
 import json
 from pathlib import Path
 
-from copthief.gui.live import render_live
-from copthief.gui.sequence import render_all_subgames
-from copthief.gui.viewer import render_audit
-from copthief.sdk import CopThiefSDK
+import matplotlib
+
+matplotlib.use("Agg")  # headless artifact generation (set before any pyplot import)
+
+from copthief.gui.animate import animate_audit  # noqa: E402
+from copthief.gui.live import render_live  # noqa: E402
+from copthief.gui.sequence import render_all_subgames  # noqa: E402
+from copthief.gui.viewer import render_audit  # noqa: E402
+from copthief.sdk import CopThiefSDK  # noqa: E402
 
 
 def _write_transcript(audit_path: Path, out_dir: Path) -> Path:
@@ -65,11 +71,13 @@ def main() -> int:
     root = sdk.config.root
     snapshot = render_audit(sdk.audit.path, root)
     filmstrips = render_all_subgames(sdk.audit.path, root)
+    animation = animate_audit(sdk.audit.path, root, save_gif=True, show=False)
     transcript = _write_transcript(sdk.audit.path, root / "assets")
     print(f"totals: {match['totals']}")
     print(f"snapshot:   {snapshot}")
     for film in filmstrips:
         print(f"filmstrip:  {film}")
+    print(f"animation:  {animation}")
     print(f"transcript: {transcript}")
     return 0
 

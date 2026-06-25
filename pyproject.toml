@@ -55,7 +55,7 @@ addopts = "-q"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/copthief/main.py", "*/tests/*", "src/copthief/gui/*", "src/copthief/reporting/emailer.py", "src/copthief/agents/server.py", "src/copthief/orchestrator/mcp_client.py", "src/copthief/orchestrator/mcp_transport.py", "src/copthief/interop/transport.py"]
+omit = ["src/copthief/main.py", "src/copthief/commands.py", "*/tests/*", "src/copthief/gui/*", "src/copthief/reporting/emailer.py", "src/copthief/agents/server.py", "src/copthief/orchestrator/mcp_client.py", "src/copthief/orchestrator/mcp_transport.py", "src/copthief/interop/transport.py"]
 
 [tool.coverage.report]
 fail_under = 85

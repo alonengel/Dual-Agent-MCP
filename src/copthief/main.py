@@ -1,84 +1,20 @@
-"""Command-line interface for CopThief.
+"""Command-line interface for CopThief (thin parser; handlers live in commands.py).
 
 Subcommands:
-  selfplay   run a full local self-game (the mandatory Level-1 pipeline)
-  serve      start a single agent's MCP server over HTTP
+  selfplay        run a full local self-game (the mandatory Level-1 pipeline)
+  replay          animate a recorded game from the audit log (window and/or GIF)
+  netplay         drive two running MCP servers over HTTP (inter-group play)
+  serve           start a single agent's MCP server over HTTP
+  serve-combined  serve both agents under one endpoint (/cop/mcp, /thief/mcp)
 """
 
 from __future__ import annotations
 
 import argparse
-import functools
 import sys
 
+from copthief import commands
 from copthief.constants import Role
-
-
-def _email_report(sdk, path, subject: str, to_addr: str | None = None) -> None:
-    """Email the report. PDF section 9: the body must be ONLY the structured JSON.
-
-    ``to_addr`` overrides the configured course recipient (handy for testing).
-    """
-    import json
-
-    from copthief.reporting.emailer import send_report_email
-
-    report = json.loads(path.read_text(encoding="utf-8"))
-    recipient = to_addr or sdk.config.get("reporting.email_to", "")
-    send_report_email(recipient, subject, report, gate=sdk.gate)
-
-
-def _selfplay(args: argparse.Namespace) -> int:
-    """Run a self-play match, save the report, optionally render/email it."""
-    from copthief.sdk import CopThiefSDK
-
-    sdk = CopThiefSDK(seed=args.seed)
-    reporter = functools.partial(print, flush=True) if args.verbose else None
-    board = None
-    if args.verbose:
-        from copthief.gui.live import render_live
-
-        board = render_live
-    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
-    path = sdk.report_and_save(match)
-    print(f"Totals: {match['totals']}\nReport: {path}")
-
-    if args.gui:
-        from copthief.gui.viewer import render_audit
-
-        render_audit(sdk.audit.path, sdk.config.root)
-    if args.email:
-        _email_report(sdk, path, "CopThief self-game report", args.email_to)
-    return 0
-
-
-def _netplay(args: argparse.Namespace) -> int:
-    """Run a match by driving the two MCP servers over HTTP (must be running)."""
-    from copthief.sdk import CopThiefSDK
-
-    sdk = CopThiefSDK(seed=args.seed)
-    match = sdk.run_network_match()
-    path = sdk.report_and_save(match)
-    print(f"Totals: {match['totals']}\nReport: {path}")
-    if args.email:
-        _email_report(sdk, path, "CopThief inter-group game report", args.email_to)
-    return 0
-
-
-def _serve(args: argparse.Namespace) -> int:
-    """Start the cop or thief MCP server over HTTP."""
-    from copthief.agents.server import run_server
-
-    run_server(Role(args.role))
-    return 0
-
-
-def _serve_combined(args: argparse.Namespace) -> int:
-    """Start both agents under one HTTP endpoint (/cop/mcp and /thief/mcp)."""
-    from copthief.agents.combined import run_combined
-
-    run_combined()
-    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -93,21 +29,30 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--email-to", default=None, help="override report recipient (testing)")
     play.add_argument("--games", type=int, default=None, help="override subgame count (demo)")
     play.add_argument("--verbose", action="store_true", help="print agent dialogue live")
-    play.set_defaults(func=_selfplay)
+    play.add_argument("--animate", action="store_true",
+                      help="show a live graphical window of the board as agents move")
+    play.set_defaults(func=commands.run_selfplay)
+
+    replay = sub.add_parser("replay", help="animate a recorded game from the audit log")
+    replay.add_argument("--audit", default=None, help="audit log path (default: configured log)")
+    replay.add_argument("--save-gif", action="store_true", help="write assets/demo_animation.gif")
+    replay.add_argument("--no-show", action="store_true", help="don't open a window (GIF only)")
+    replay.add_argument("--interval", type=int, default=700, help="ms per move frame")
+    replay.set_defaults(func=commands.run_replay)
 
     net = sub.add_parser("netplay", help="run a match against running MCP servers")
     net.add_argument("--seed", type=int, default=None, help="RNG seed for reproducibility")
     net.add_argument("--email", action="store_true", help="email the JSON report via Gmail")
     net.add_argument("--email-to", default=None, help="override report recipient (testing)")
-    net.set_defaults(func=_netplay)
+    net.set_defaults(func=commands.run_netplay)
 
     serve = sub.add_parser("serve", help="start an agent MCP server")
     serve.add_argument("--role", choices=[r.value for r in Role], required=True)
-    serve.set_defaults(func=_serve)
+    serve.set_defaults(func=commands.run_serve)
 
     combined = sub.add_parser("serve-combined",
                               help="serve both agents on one endpoint (/cop/mcp, /thief/mcp)")
-    combined.set_defaults(func=_serve_combined)
+    combined.set_defaults(func=commands.run_serve_combined)
     return parser
 
 

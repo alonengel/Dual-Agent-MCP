@@ -6,10 +6,10 @@ are cell centres, so the cop/thief/barriers render inside the blocks (not on lin
 
 from __future__ import annotations
 
-import matplotlib
-
-matplotlib.use("Agg")  # headless image rendering (set before any figure is created)
-from matplotlib.patches import Circle, Rectangle  # noqa: E402
+# NB: this module is backend-neutral on purpose. Headless PNG generators
+# (viewer.py, sequence.py) select the "Agg" backend themselves; the animated
+# window (animate.py / window.py) needs an interactive backend instead.
+from matplotlib.patches import Circle, Rectangle
 
 
 def draw_board(ax, width: int, height: int, origin: int, cop: tuple[int, int],
