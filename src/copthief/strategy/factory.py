@@ -7,13 +7,14 @@ from typing import Any
 
 from copthief.strategy.adaptive import AdaptiveStrategy
 from copthief.strategy.base import Strategy
+from copthief.strategy.belief import BeliefStrategy
 from copthief.strategy.heuristic import HeuristicStrategy
 from copthief.strategy.lookahead import LookaheadStrategy
 from copthief.strategy.qlearning import QTableStrategy
 
 
 def build_strategy(cfg: dict[str, Any], rng: random.Random | None = None) -> Strategy:
-    """Return the configured strategy ('heuristic', 'adaptive', 'lookahead' or 'qtable')."""
+    """Return the configured strategy (heuristic/adaptive/lookahead/belief/qtable)."""
     kind = str(cfg.get("kind", "heuristic")).lower()
     barriers = bool(cfg.get("cop_uses_barriers", False))
     if kind == "qtable":
@@ -24,6 +25,11 @@ def build_strategy(cfg: dict[str, Any], rng: random.Random | None = None) -> Str
             epsilon=float(params.get("epsilon", 0.1)),
             rng=rng,
         )
+    if kind == "belief":
+        bel = cfg.get("belief", {})
+        return BeliefStrategy(use_barriers=barriers,
+                              claim_discount=float(bel.get("claim_discount", 0.4)),
+                              sight_radius=int(bel.get("sight_radius", 1)))
     if kind == "lookahead":
         return LookaheadStrategy(use_barriers=barriers)
     if kind == "adaptive":
