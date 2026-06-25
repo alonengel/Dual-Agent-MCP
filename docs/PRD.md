@@ -21,7 +21,7 @@ their own protocol by negotiating; an MCP-client orchestrator drives the match.
 | Two MCP servers reachable over HTTP | cop + thief, token-protected |
 | State-by-state audit log produced | one line per turn, dispute-ready |
 | JSON report generated & emailable | matches PDF sections 9.1 / 9.2 |
-| Test coverage | ≥ 85% (achieved ~96%, 191 tests) |
+| Test coverage | ≥ 85% (achieved ~96%, 208 tests) |
 | Files ≤ 150 lines, ruff clean, uv-managed | enforced |
 
 **Acceptance:** `uv run copthief selfplay` produces a scored result, a saved JSON

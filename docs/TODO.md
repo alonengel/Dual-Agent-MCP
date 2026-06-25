@@ -57,11 +57,11 @@ Status legend: [x] done · [~] in progress · [ ] not started
       Claude CLI subscription is the primary path; the API key is only a fallback)
 
 ## Software-excellence compliance (guidelines V3 — §17 final checklist)
-- [x] **Docs**: README (user manual + report), PRD (KPIs), PLAN (C4 + 6 ADRs), TODO, PRD_strategy, PROMPTS, **COST** (guidelines §11), DEPLOYMENT (§2)
+- [x] **Docs**: README (user manual + report), PRD (KPIs), PLAN (C4 + 10 ADRs), TODO, PRD_strategy, PROMPTS, **COST** (guidelines §11), DEPLOYMENT (§2)
 - [x] **Code**: modular, files ≤150 lines, docstrings explain *why*, consistent style (§3)
 - [x] **Architecture**: single SDK entry point; OOP + Template Method, no duplication (§4)
 - [x] **API gatekeeper**: per-minute **and** per-hour throttle, retries, `get_queue_status` (§5)
-- [x] **Testing**: TDD, ≥85% coverage (~96%, 191 tests), edge cases + graceful errors (§6)
+- [x] **Testing**: TDD, ≥85% coverage (~96%, 208 tests), edge cases + graceful errors (§6)
 - [x] **Quality/config/security**: ruff 0 errors, no hardcoded values, `.env.example`, secrets git-ignored (§7)
 - [x] **Versioning & uv**: `version.py` 1.0.0 + config version validated on startup; uv only + `uv.lock` (§8)
 - [x] **Research**: sensitivity sweep + analysis notebook + visualizations (§9)
@@ -69,8 +69,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Extensibility & standards**: strategy/LLM factories as extension points; ISO/IEC 25010 mapping (§12/§13)
 
 ## Enhancements (post-baseline iteration)
-- [x] **Lookahead strategy** (`strategy/lookahead.py`): depth-1 minimax, now the default;
-      strongest of the four policies (replaces `adaptive` as default for both roles)
+- [x] **Lookahead strategy** (`strategy/lookahead.py`): depth-1 minimax, the fast default
+      (replaces `adaptive` as default for both roles; superseded as *strongest* by depth-N minimax)
 - [x] **Strategy arena** (`scripts/strategy_arena.py`): head-to-head win-rate matrix that
       quantifies policy strength (the evidence behind the default)
 - [x] **Animated GUI** (`gui/animate.py` + `gui/window.py`): live matplotlib window
@@ -85,7 +85,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
       negative-info / soft-claim) with lookahead over the most-likely cell — Dec-POMDP upgrade
 - [x] **Deterministic replay** (`replay.py`): re-runs the audit log through the engine and
       asserts positions + outcomes (reproducibility / regression guard)
-- [x] **ADRs split into `docs/adr/`**: nine numbered decision records (was inline in PLAN.md)
+- [x] **ADRs split into `docs/adr/`**: ten numbered decision records (was inline in PLAN.md)
 - [x] **RL training** (`training.py` + `scripts/train_qtable.py`): Q-learning vs a fixed
       heuristic, ε-decay, learning-curve PNG; policy-agnostic loop (tabular + linear)
 - [x] **Linear function approximation** (`strategy/linear_q.py`): afterstate features +
@@ -95,3 +95,6 @@ Status legend: [x] done · [~] in progress · [ ] not started
       game-tree search; depth-6 **solves the 5×5/4-round game** (capture from every start, 1.00
       win-rate vs every thief). Establishes the ceiling: the ~0.80 plateau was a depth limit of
       the one-ply policies, not the game (REPORT §9.1)
+- [x] **GUI dialogue + responsive live window**: the saved GIF captions each turn's taunt and
+      the `--animate` window adds a live dialogue-log panel; the match runs on a worker thread so
+      the window never freezes while a turn waits on a slow LLM call

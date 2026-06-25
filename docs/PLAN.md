@@ -59,6 +59,7 @@ Decision / Consequences), so decisions are versioned individually and never rewr
 | [0007](adr/0007-interop-additive-adapter.md) | Inter-group bonus is an additive peer adapter |
 | [0008](adr/0008-probabilistic-belief-grid.md) | Probabilistic belief grid (partial observation) |
 | [0009](adr/0009-deterministic-replay.md) | Deterministic replay of the audit log |
+| [0010](adr/0010-depth-n-minimax.md) | Depth-N minimax search strategy (solves the 5×5 game) |
 
 ## 4. Interfaces / Contracts
 

@@ -103,9 +103,29 @@ opponent's best one-step reply**, rather than by the current distance:
   (the post-chase score is non-monotonic at distance 0 — see REPORT §13.1).
 
 **Why it is the default:** [`scripts/strategy_arena.py`](../scripts/strategy_arena.py)
-plays every policy pairing head-to-head (no LLM, perfect info). The lookahead **cop wins in
-every column**; the old `adaptive` policy is the weakest (especially as a thief). It uses
-only legal moves and the standard capture rule, so the game rules (PDF §4) are untouched.
+plays every policy pairing head-to-head (no LLM, perfect info). Among the **depth-1** policies
+the lookahead **cop wins in every column** and `adaptive` is the weakest (especially as a
+thief); the deeper minimax (§3d) is stronger still but lookahead is kept default for speed and
+to keep self-play games long enough to be worth watching. It uses only legal moves and the
+standard capture rule, so the game rules (PDF §4) are untouched.
+
+## 3d. Strategy E — Minimax (depth-N): the strongest policy
+
+`strategy/minimax.py` generalises the depth-1 lookahead to a full game-tree search. One
+cop-perspective value drives both roles (cop **maximises** it → seek capture; thief
+**minimises** it → run out the clock), with capture/timeout terminals mirroring the engine
+clock, a Chebyshev-distance leaf at the horizon, and a per-decide transposition table (the
+5×5 search is sub-millisecond per move). Win-rate climbs with depth until the game is solved:
+at **depth ≥ 6 the cop captures from every 5×5 / 4-round start (1.00 vs every thief)** — the
+~0.80 RL plateau was a *depth* limit of the one-ply policies, not the game (REPORT §9.1).
+Two complementary results: at equal depth-1, *learning beats hand-tuning* (linear FA 0.79 vs
+lookahead 0.65); lifting the depth cap *solves it*. Opt in via `strategy.kind: minimax`.
+
+**Minimax does *not* improve the thief (negative result):** against the sub-optimal cops it
+actually faces, the minimax thief is *worse* than the lookahead thief — minimax optimises vs a
+*worst-case* cop, so it plays over-pessimistically and fails to exploit a myopic one. It only
+edges ahead against a perfect cop, and a richer evasion leaf adds nothing (REPORT §9.1). So
+`lookahead` stays the thief; *minimax ≠ best response to a weak opponent*.
 
 Two **strategy-expert skills** (`.claude/skills/cop-strategist`,
 `.claude/skills/thief-strategist`) document the strategic principles and adaptation cues
@@ -124,9 +144,9 @@ barriers only in a stand-off) for the LLM personas / Claude-Code development.
 ## 5. Constraints, Alternatives, Success Criteria
 
 - **Constraints:** one step/turn; barriers cop-only (≤5); moves validated by referee.
-- **Alternatives considered:** minimax/expectimax (heavier, unnecessary for the
-  pipeline goal); deep RL (out of scope — no GPU/time budget). Tabular Q-learning was
-  chosen as the assignment-recommended, lightweight learning option.
+- **Alternatives considered → adopted:** depth-N **minimax** (§3d) was added and *solves* the
+  5×5 game; expectimax is unnecessary (the engine is deterministic). Deep RL stays out of scope
+  (no GPU/time budget); linear function approximation (§3a) is the learned-policy sweet spot.
 - **Success criteria:** strategies always emit a *legal-intent* move; the cop reliably
   captures on small boards; Q-update runs without error and is unit-tested.
 

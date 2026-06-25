@@ -36,7 +36,7 @@ The PDF mandates a working MCP pipeline and free-language play; we added the fol
 | **Named Cloudflare tunnel + ngrok post-mortem** | Reliable public MCP; documented why free ngrok failed mid-match (`docs/archive/ngrok.md`) |
 | **Agent strategy skills** | `.claude/skills/` — cop/thief/protocol guides for consistent LLM behaviour |
 | **Measured cost ledger** | [`docs/COST.md`](docs/COST.md): CLI $0, API ~$0.15/6 games (Opus 4.8), Gmail free |
-| **Animated real-time GUI** | `selfplay --animate` live matplotlib window + `replay --save-gif` → `assets/demo_animation.gif` (headless-safe) |
+| **Animated real-time GUI** | `selfplay --animate` live window (board + dialogue log, runs the match off the GUI thread so it never freezes) + `replay --save-gif` → `assets/demo_animation.gif` with per-turn taunt captions (headless-safe) |
 | **Submission self-check gate** | `scripts/check_submission.py` maps every rubric item to an automated PASS/FAIL check |
 | **Depth-1 minimax strategy** | `strategy/lookahead.py` acts against the opponent's best reply — the fast default |
 | **Depth-N minimax that solves it** | `strategy/minimax.py` — full game-tree search; depth-6 forces capture from *every* 5×5/4-round start (1.00 win-rate, §9.1) |
@@ -389,9 +389,11 @@ every turn (here the thief *lies* and the cop sees through it):
 ```
 
 An **animated graphical GUI** shows the agents *moving* in real time. `selfplay --animate`
-opens an interactive matplotlib window that redraws after every turn (the live interface);
-`replay --save-gif` re-renders any recorded game from the audit log into a shareable GIF
-(headless-safe, so it also runs in CI). The whole 6-sub-game match as one animation:
+opens an interactive matplotlib window — board on the left, a live **dialogue log** of the
+agents' taunts on the right — that redraws after every turn. The match runs on a worker thread
+so the window stays responsive even when a turn waits on a slow LLM call. `replay --save-gif`
+re-renders any recorded game from the audit log into a shareable GIF whose frames caption each
+turn's taunt (headless-safe, so it also runs in CI). The whole 6-sub-game match as one animation:
 
 ![Animated game (GUI / GIF)](assets/demo_animation.gif)
 
@@ -456,7 +458,7 @@ in the cents per full match.
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **191 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **208 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config validated on startup.
 - **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
@@ -604,7 +606,7 @@ All tunable parameters live in `config/` (never hardcoded):
 src/copthief/
   sdk/            single entry point for all logic (SDK layer)
   domain/         board, rules, scoring, subgame state machine, models
-  strategy/       lookahead (minimax) + linear-FA (RL, strongest) + belief + adaptive + heuristic + tabular Q
+  strategy/       lookahead (depth-1 default) + minimax (depth-N, solves it) + linear-FA (RL) + belief + adaptive + heuristic + tabular Q
   belief/         Bayes-filter probability grid over the opponent (partial observation)
   llm/            provider abstraction (mock/claude/ollama/api) via API gatekeeper
   agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF §5.2)
