@@ -55,7 +55,7 @@ def _plot(curve: list[dict], baseline: float, out: Path) -> None:
     ax.set_xlabel("training games")
     ax.set_ylabel("cop win-rate vs heuristic thief")
     ax.set_ylim(0, 1)
-    ax.set_title("Q-learning self-play: cop win-rate over training")
+    ax.set_title("Q-learning: cop win-rate over training (vs heuristic thief)")
     ax.legend()
     fig.tight_layout()
     out.parent.mkdir(parents=True, exist_ok=True)

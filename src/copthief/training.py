@@ -1,13 +1,15 @@
-"""Reinforcement-learning trainer: tabular Q-learning by self-play (no LLM, keyless).
+"""Reinforcement-learning trainer: tabular Q-learning vs a fixed heuristic opponent.
 
-Both agents run :class:`QTableStrategy` and learn online from a distance-shaped reward
-(`shaped_reward`): the cop is rewarded for closing in, the thief for fleeing, with a large
-terminal bonus/penalty on capture. Exploration anneals from ``eps_start`` to ``eps_end`` as
-training progresses (explore early, exploit late). Every ``eval_every`` games the greedy cop
-is measured against a fixed heuristic thief, yielding a learning curve.
+Each Q-learner trains against a *stationary* heuristic opponent of the other role (rather
+than co-adapting self-play, which gives a moving target and a noisy curve): the cop learns
+to capture a heuristic thief, the thief to evade a heuristic cop. Rewards are distance-shaped
+(`shaped_reward`) with a terminal capture bonus/penalty; exploration anneals from `eps_start`
+to `eps_end`. Every `eval_every` games the greedy cop is measured against the heuristic thief,
+so the learning curve is directly comparable to what is being trained.
 
 Games run on a deliberately tight clock (small board, few rounds) so the cop cannot win by
-default — a better-learned policy captures more often, making the curve informative.
+default — a better-learned policy captures more often. (Q-learning tops out near the greedy
+ceiling here; an edge/barrier-aware state was tested and *regressed* it — see README §9.1.)
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ from copthief.constants import Outcome, Role
 from copthief.domain.board import Board
 from copthief.domain.models import Observation, Position
 from copthief.domain.subgame import Subgame
-from copthief.strategy.base import chebyshev
+from copthief.strategy.base import Strategy, chebyshev
 from copthief.strategy.factory import build_strategy
 from copthief.strategy.qlearning import QTableStrategy, shaped_reward
 
@@ -53,9 +55,9 @@ def _start_cells(board: Board, rng: random.Random) -> tuple[Position, Position]:
     return cop, thief
 
 
-def _run_game(strats: dict[Role, object], cfg: TrainConfig, rng: random.Random,
-              *, learn: bool) -> Outcome:
-    """Play one self-play subgame; update Q-values each ply when ``learn`` is set."""
+def _run_game(strats: dict[Role, Strategy], cfg: TrainConfig, rng: random.Random,
+              *, learner: Role | None) -> Outcome:
+    """Play one subgame; update the ``learner`` role's Q-values after each of its plies."""
     board = Board(cfg.grid, cfg.grid, 1, True)
     cop, thief = _start_cells(board, rng)
     game = Subgame(board, cop, thief, cfg.rounds, cfg.max_barriers)
@@ -66,7 +68,7 @@ def _run_game(strats: dict[Role, object], cfg: TrainConfig, rng: random.Random,
         before = chebyshev(own, opp)
         obs = Observation(role, own, game.move_number, game.max_moves, game.barriers_left)
         game.apply(strats[role].decide(obs, opp, board))
-        if learn:
+        if role is learner:
             after = chebyshev(game.position_of(role), opp)
             strats[role].learn(shaped_reward(role, before, after, game.captured()))
     return game.outcome or Outcome.THIEF_WIN
@@ -77,20 +79,22 @@ def evaluate(q_cop, cfg: TrainConfig, rng: random.Random, games: int) -> float:
     cop = QTableStrategy(cfg.learning_rate, cfg.discount, 0.0, rng)
     cop.q = q_cop.copy()
     strats = {Role.COP: cop, Role.THIEF: build_strategy({"kind": "heuristic"})}
-    wins = sum(_run_game(strats, cfg, rng, learn=False) is Outcome.COP_WIN for _ in range(games))
+    wins = sum(_run_game(strats, cfg, rng, learner=None) is Outcome.COP_WIN for _ in range(games))
     return wins / games
 
 
 def train(cfg: TrainConfig, rng: random.Random | None = None) -> dict:
-    """Train cop+thief Q-tables by self-play; return the tables and the learning curve."""
+    """Train cop+thief Q-tables vs fixed heuristics; return the tables and learning curve."""
     rng = rng or random.Random(cfg.seed)
     cop = QTableStrategy(cfg.learning_rate, cfg.discount, cfg.eps_start, rng)
     thief = QTableStrategy(cfg.learning_rate, cfg.discount, cfg.eps_start, rng)
-    strats = {Role.COP: cop, Role.THIEF: thief}
+    h_thief = build_strategy({"kind": "heuristic"})
+    h_cop = build_strategy({"kind": "heuristic", "cop_uses_barriers": True})
     curve: list[dict] = []
     for i in range(cfg.games):
         cop.epsilon = thief.epsilon = _epsilon(i, cfg.games, cfg.eps_start, cfg.eps_end)
-        _run_game(strats, cfg, rng, learn=True)
+        _run_game({Role.COP: cop, Role.THIEF: h_thief}, cfg, rng, learner=Role.COP)
+        _run_game({Role.COP: h_cop, Role.THIEF: thief}, cfg, rng, learner=Role.THIEF)
         if (i + 1) % cfg.eval_every == 0:
             curve.append({
                 "games": i + 1,
