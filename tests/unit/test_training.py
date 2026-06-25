@@ -7,8 +7,16 @@ import random
 
 import numpy as np
 
+from copthief.strategy.linear_q import LinearQStrategy
 from copthief.strategy.qlearning import QTableStrategy
-from copthief.training import TrainConfig, _epsilon, evaluate, train
+from copthief.training import (
+    TrainConfig,
+    _epsilon,
+    evaluate,
+    evaluate_strategy,
+    train,
+    train_linear,
+)
 
 
 def test_epsilon_anneals_from_start_to_end() -> None:
@@ -41,3 +49,24 @@ def test_training_beats_the_untrained_baseline() -> None:
     baseline = evaluate(np.zeros_like(out["q_cop"]), cfg, random.Random(99), cfg.eval_games)
     trained = out["curve"][-1]["cop_winrate_vs_heuristic"]
     assert trained > baseline
+
+
+def test_train_linear_returns_weights_and_curve() -> None:
+    cfg = TrainConfig(games=20, eval_every=10, eval_games=20, grid=5, rounds=4, seed=1)
+    out = train_linear(cfg)
+    assert out["w_cop"].shape == out["w_thief"].shape  # both weight vectors built
+    assert len(out["curve"]) == 2
+
+
+def test_evaluate_strategy_returns_a_fraction() -> None:
+    cfg = TrainConfig(grid=5, rounds=4)
+    win_rate = evaluate_strategy(LinearQStrategy(0.05, 0.9, 0.0), cfg, random.Random(0), games=10)
+    assert 0.0 <= win_rate <= 1.0
+
+
+def test_linear_training_beats_the_untrained_baseline() -> None:
+    # The headline: linear afterstate-feature RL learns a strong cop fast.
+    cfg = TrainConfig(games=4000, eval_every=4000, eval_games=200, grid=5, rounds=4,
+                      seed=1, learning_rate=0.05)
+    out = train_linear(cfg)
+    assert out["curve"][-1]["cop_winrate_vs_heuristic"] > 0.5  # well past heuristic/baseline

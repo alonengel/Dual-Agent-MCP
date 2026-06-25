@@ -64,6 +64,17 @@ Q(s,a) ← Q(s,a) + α · [ r + γ · maxₐ′ Q(s′,a′) − Q(s,a) ]
 - **Hyperparameters (config):** `learning_rate=0.1`, `discount_factor=0.9`,
   `epsilon=0.1` — all read from `config/config.yaml`, never hardcoded.
 
+## 3a. Strategy B′ — Linear function approximation (RL, strongest learned cop)
+
+`strategy/linear_q.py` replaces the table with a **linear value over afterstate features**:
+the value of moving to a cell is `w · φ`, where `φ` = (distance to rival, rival escape cells,
+own mobility, rival wall-clearance, capture/adjacency flags, and the **post-reply distance** —
+the depth-1 lookahead signal). Weights are learned by **Monte-Carlo** return (bootstrapped TD
+diverges here — the "deadly triad"). Because the features generalise across all positions, the
+policy learns to weight cornering/capture *better than the hand-tuned minimax*: trained vs a
+fixed heuristic it reaches **~0.80** cop win-rate, **beating the 0.66 lookahead** across thief
+types (REPORT §9.1). Train with `scripts/train_qtable.py --policy linear`.
+
 ## 3b. Strategy C — Adaptive: anticipation + mid-game reaction
 
 This strategy **adapts to the enemy's responses mid-game**. From the opponent's

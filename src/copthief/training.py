@@ -1,21 +1,21 @@
-"""Reinforcement-learning trainer: tabular Q-learning vs a fixed heuristic opponent.
+"""Reinforcement-learning trainer: Q-learning vs a fixed heuristic opponent.
 
-Each Q-learner trains against a *stationary* heuristic opponent of the other role (rather
-than co-adapting self-play, which gives a moving target and a noisy curve): the cop learns
-to capture a heuristic thief, the thief to evade a heuristic cop. Rewards are distance-shaped
+Each learner trains against a *stationary* heuristic opponent of the other role (rather than
+co-adapting self-play, which gives a moving target and a noisy curve): the cop learns to
+capture a heuristic thief, the thief to evade a heuristic cop. Rewards are distance-shaped
 (`shaped_reward`) with a terminal capture bonus/penalty; exploration anneals from `eps_start`
-to `eps_end`. Every `eval_every` games the greedy cop is measured against the heuristic thief,
-so the learning curve is directly comparable to what is being trained.
+to `eps_end`. Every `eval_every` games the greedy cop is measured against the heuristic thief.
 
-Games run on a deliberately tight clock (small board, few rounds) so the cop cannot win by
-default — a better-learned policy captures more often. The Q-state is compact but board-aware
-(see :mod:`copthief.strategy.qlearning`); it improves on an offset-only state but still trails
-the lookahead minimax — full analysis in README §9.1.
+The loop is policy-agnostic: :func:`train` learns a tabular Q-table (board-region state) and
+:func:`train_linear` learns a linear afterstate value over hand-built features
+(:mod:`copthief.strategy.linear_q`). Games run on a deliberately tight clock so the cop cannot
+win by default — a better-learned policy captures more often. Full analysis in README §9.1.
 """
 
 from __future__ import annotations
 
 import random
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from copthief.constants import Outcome, Role
@@ -24,6 +24,7 @@ from copthief.domain.models import Observation, Position
 from copthief.domain.subgame import Subgame
 from copthief.strategy.base import Strategy, chebyshev
 from copthief.strategy.factory import build_strategy
+from copthief.strategy.linear_q import LinearQStrategy
 from copthief.strategy.qlearning import QTableStrategy, shaped_reward
 
 
@@ -72,23 +73,32 @@ def _run_game(strats: dict[Role, Strategy], cfg: TrainConfig, rng: random.Random
         if role is learner:
             after = chebyshev(game.position_of(role), opp)
             strats[role].learn(shaped_reward(role, before, after, game.captured()))
+    if learner is not None and hasattr(strats[learner], "end_episode"):
+        strats[learner].end_episode()  # Monte-Carlo learners settle up at episode end
     return game.outcome or Outcome.THIEF_WIN
 
 
-def evaluate(q_cop, cfg: TrainConfig, rng: random.Random, games: int) -> float:
-    """Greedy cop (using ``q_cop``) win-rate vs a fixed heuristic thief."""
-    cop = QTableStrategy(cfg.learning_rate, cfg.discount, 0.0, rng)
-    cop.q = q_cop.copy()
+def evaluate_strategy(cop: Strategy, cfg: TrainConfig, rng: random.Random, games: int) -> float:
+    """Greedy win-rate of a trained ``cop`` strategy vs a fixed heuristic thief."""
+    saved = cop.epsilon  # type: ignore[attr-defined]
+    cop.epsilon = 0.0    # type: ignore[attr-defined]
     strats = {Role.COP: cop, Role.THIEF: build_strategy({"kind": "heuristic"})}
     wins = sum(_run_game(strats, cfg, rng, learner=None) is Outcome.COP_WIN for _ in range(games))
+    cop.epsilon = saved  # type: ignore[attr-defined]
     return wins / games
 
 
-def train(cfg: TrainConfig, rng: random.Random | None = None) -> dict:
-    """Train cop+thief Q-tables vs fixed heuristics; return the tables and learning curve."""
-    rng = rng or random.Random(cfg.seed)
-    cop = QTableStrategy(cfg.learning_rate, cfg.discount, cfg.eps_start, rng)
-    thief = QTableStrategy(cfg.learning_rate, cfg.discount, cfg.eps_start, rng)
+def evaluate(q_cop, cfg: TrainConfig, rng: random.Random, games: int) -> float:
+    """Greedy cop win-rate from a raw Q-table ``q_cop`` (back-compat array entry point)."""
+    cop = QTableStrategy(cfg.learning_rate, cfg.discount, 0.0, rng)
+    cop.q = q_cop.copy()
+    return evaluate_strategy(cop, cfg, rng, games)
+
+
+def _train(cfg: TrainConfig, rng: random.Random,
+           make: Callable[[float], Strategy]) -> tuple[Strategy, Strategy, list[dict]]:
+    """Generic train loop: each role learns vs a fixed heuristic; returns (cop, thief, curve)."""
+    cop, thief = make(cfg.eps_start), make(cfg.eps_start)
     h_thief = build_strategy({"kind": "heuristic"})
     h_cop = build_strategy({"kind": "heuristic", "cop_uses_barriers": True})
     curve: list[dict] = []
@@ -97,9 +107,23 @@ def train(cfg: TrainConfig, rng: random.Random | None = None) -> dict:
         _run_game({Role.COP: cop, Role.THIEF: h_thief}, cfg, rng, learner=Role.COP)
         _run_game({Role.COP: h_cop, Role.THIEF: thief}, cfg, rng, learner=Role.THIEF)
         if (i + 1) % cfg.eval_every == 0:
-            curve.append({
-                "games": i + 1,
-                "epsilon": round(cop.epsilon, 3),
-                "cop_winrate_vs_heuristic": round(evaluate(cop.q, cfg, rng, cfg.eval_games), 3),
-            })
+            curve.append({"games": i + 1, "epsilon": round(cop.epsilon, 3),
+                          "cop_winrate_vs_heuristic":
+                              round(evaluate_strategy(cop, cfg, rng, cfg.eval_games), 3)})
+    return cop, thief, curve
+
+
+def train(cfg: TrainConfig, rng: random.Random | None = None) -> dict:
+    """Train tabular Q-tables vs fixed heuristics; return the tables and learning curve."""
+    rng = rng or random.Random(cfg.seed)
+    cop, thief, curve = _train(
+        cfg, rng, lambda eps: QTableStrategy(cfg.learning_rate, cfg.discount, eps, rng))
     return {"q_cop": cop.q, "q_thief": thief.q, "curve": curve}
+
+
+def train_linear(cfg: TrainConfig, rng: random.Random | None = None) -> dict:
+    """Train linear afterstate-feature policies vs fixed heuristics; return weights + curve."""
+    rng = rng or random.Random(cfg.seed)
+    cop, thief, curve = _train(
+        cfg, rng, lambda eps: LinearQStrategy(cfg.learning_rate, cfg.discount, eps, rng))
+    return {"w_cop": cop.weights, "w_thief": thief.weights, "curve": curve}

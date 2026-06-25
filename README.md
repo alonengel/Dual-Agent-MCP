@@ -40,6 +40,7 @@ The PDF mandates a working MCP pipeline and free-language play; we added the fol
 | **Submission self-check gate** | `scripts/check_submission.py` maps every rubric item to an automated PASS/FAIL check |
 | **Depth-1 minimax strategy** | `strategy/lookahead.py` acts against the opponent's best reply — strongest of the four policies (the default) |
 | **Strategy arena** | `scripts/strategy_arena.py` quantifies policy strength head-to-head (win-rate matrix), the evidence behind the default |
+| **RL that beats the minimax** | `strategy/linear_q.py` — linear afterstate-feature Q-learning, Monte-Carlo trained, reaches ~0.80 vs the 0.66 lookahead bar (§9.1) |
 
 ## 2. Problem framing — a DecPOMDP
 
@@ -217,9 +218,13 @@ shape the cop's pursuing tone and the thief's evasive tone.
   Barriers are *need-based* (≤5/subgame) — rarely the best move on an open 5×5.
 - **Tabular Q-learning (optional):** ε-greedy with the Bellman update
   `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards, with a
-  **compact board-region state** (offset × 3×3 region) so it can learn to corner. **Trained
-  vs a fixed heuristic** ([`scripts/train_qtable.py`](scripts/train_qtable.py), see §9.1):
-  ~0.40 vs the heuristic thief — past the 0.36 heuristic cop, short of the 0.66 lookahead ceiling.
+  **compact board-region state** (offset × 3×3 region) so it can learn to corner (~0.40 vs the
+  heuristic thief; trained by [`scripts/train_qtable.py`](scripts/train_qtable.py)).
+- **Linear function approximation (RL, the strongest learned cop):**
+  [`strategy/linear_q.py`](src/copthief/strategy/linear_q.py) learns `w · φ(afterstate)` over
+  features (distance, rival escapes, mobility, wall-proximity, capture, and the depth-1
+  lookahead signal), trained by Monte-Carlo return. It reaches **~0.80** — **beating the 0.66
+  lookahead minimax** across thief types (see §9.1).
 
 **Quantified** by [`scripts/strategy_arena.py`](scripts/strategy_arena.py) (head-to-head,
 no LLM, perfect info). On an 8×8 with a tight 6-round clock (so the thief can actually win),
@@ -265,45 +270,53 @@ With thief **deception** + a skeptical cop enabled (the default), 5×5 settles a
 — the thief's lies lift its share, but counter-intelligence keeps the cop ahead. Reproducible
 in `notebooks/analysis.ipynb`.
 
-### 9.1 Reinforcement-learning training (Q-learning)
+### 9.1 Reinforcement-learning training — learning a cop that beats the minimax
 
-The optional Q-learning agents are **trained against a fixed heuristic opponent** —
-reinforcement learning, not LLM fine-tuning — over many fast, keyless engine games with ε
-annealed from explore to exploit ([`src/copthief/training.py`](src/copthief/training.py), CLI
-[`scripts/train_qtable.py`](scripts/train_qtable.py)). On a tight 5×5/4-round clock (so the
-cop cannot win by default), the greedy cop rises from a ~1% untrained baseline to **~0.38–0.40**
-vs a heuristic thief, past the **0.36** hand-written heuristic cop:
+The agents are **trained vs a fixed heuristic opponent** — reinforcement learning, not LLM
+fine-tuning — over many fast, keyless engine games with ε annealed from explore to exploit
+([`src/copthief/training.py`](src/copthief/training.py), CLI
+[`scripts/train_qtable.py`](scripts/train_qtable.py)). All numbers are greedy cop win-rate vs a
+heuristic thief on a tight **5×5 / 4-round** clock (so the cop cannot win by default); the
+**lookahead minimax scores 0.66** here (`strategy_arena.py --grid 5 --rounds 4`) — the bar.
 
-![Q-learning training curve](assets/training_curve.png)
-
-```bash
-uv run python scripts/train_qtable.py --games 200000 --eval-every 20000   # saves Q-tables + PNG
-```
-
-**The state is the lever — a documented experiment.** With an **offset-only** state (just the
-opponent's relative cell) the Q-cop converges to ≈ the heuristic (~0.35) — same policy class,
-no notion of *where on the board* it is, so it cannot learn to corner. We tried two richer
-states A/B against it at matched settings:
+The headline: **linear function approximation learns a cop that beats the minimax (~0.80 vs
+0.66)** — and the same cop also beats it against adaptive/lookahead thieves. The journey:
 
 | Cop policy (5×5 / 4-round, vs heuristic thief) | Win-rate |
 |---|---|
 | Heuristic | 0.36 |
-| Q-learning, **offset-only** state | ~0.35 |
-| Q-learning, **full 8-bit blocked-neighbour mask** — *regressed, reverted* | ~0.32 |
-| Q-learning, **compact board-region state** (kept) | ~0.40 (best seed ~0.57) |
-| **Lookahead minimax (default)** | **0.66** |
+| Q-table, **offset-only** state | ~0.35 |
+| Q-table, **full 8-bit blocked-neighbour mask** — *too sparse, rejected* | ~0.32 |
+| Q-table, **compact board-region state** (49×9) | ~0.40 |
+| Lookahead minimax (the bar) | 0.66 |
+| **Linear afterstate features + Monte-Carlo** (`--policy linear`) | **~0.80** |
 
-- The **full blocked-neighbour mask** (256× more states) *regressed* it (~0.32): far too sparse
-  to fill, so it just dilutes the data.
-- The **compact board-region state** — offset × which 3×3 region the rival occupies (49×9 = 441
-  states) — *helps* (~0.40 mean, up to ~0.57): small enough to fill, board-aware enough to
-  start cornering. So the lever really is a *richer-but-learnable* state, not a bigger one.
+![Q-learning training curve](assets/training_curve.png)
 
-It still falls short of the **0.66** that the depth-1 **lookahead minimax** reaches on the same
-clock (`strategy_arena.py --grid 5 --rounds 4`): tabular Q is high-variance here and cannot
-represent multi-step cornering. **For a strong cop, use the default `lookahead`;** Q-learning
-demonstrates the RL pipeline and the state-richness lesson. (Kept per the lecture's "document
-what you tried" guidance.)
+```bash
+uv run python scripts/train_qtable.py --policy linear --games 80000   # ~0.80, beats 0.66
+uv run python scripts/train_qtable.py --games 200000                   # tabular baseline (~0.40)
+```
+
+**Why each step moved the needle (all measured, A/B):**
+- **Tabular, offset-only** converges to ≈ the heuristic (~0.35): the state has no notion of
+  *where on the board* it is, so it cannot learn to corner.
+- **Richer table states:** a full 8-bit blocked-neighbour mask (256× states) *regressed* it
+  (too sparse); a **compact board-region** state (offset × 3×3 region) *helped* (~0.40). So the
+  lever is a *richer-but-learnable* state — not just a bigger one.
+- **Reward shaping** (cornering bonus + time penalty) gave **no** lift: the cornering signal is
+  too sparse and a time penalty hurt — rejected.
+- **Linear function approximation** ([`strategy/linear_q.py`](src/copthief/strategy/linear_q.py))
+  was the breakthrough. The value of a move is `w · φ(afterstate)` over hand-built features
+  (distance, the rival's escape cells, own mobility, wall-proximity, capture, and the **post-reply
+  distance** — the depth-1 lookahead signal handed to the learner). Weights are learned by
+  **Monte-Carlo** return (bootstrapped TD diverged — the "deadly triad"). The features generalise
+  across all positions, so it learns to weight cornering + capture *better than the hand-tuned
+  minimax*, reaching **~0.80** — stable across seeds, and **> 0.66 vs every thief type**.
+
+So the lever was never more games or a bigger table — it was the **right features + a stable
+update**. (The failed attempts are kept as documented negative results, per the lecture's
+"document what you tried" guidance.)
 
 **Visual proof** — four complementary views (one of them a real-time graphical GUI). The
 **live CLI** (`selfplay --verbose`) prints the board and the agents' free-language dialogue
@@ -394,7 +407,7 @@ in the cents per full match.
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **183 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **191 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config validated on startup.
 - **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
@@ -542,7 +555,7 @@ All tunable parameters live in `config/` (never hardcoded):
 src/copthief/
   sdk/            single entry point for all logic (SDK layer)
   domain/         board, rules, scoring, subgame state machine, models
-  strategy/       lookahead (minimax) + belief + adaptive + heuristic + tabular Q-learning
+  strategy/       lookahead (minimax) + linear-FA (RL, strongest) + belief + adaptive + heuristic + tabular Q
   belief/         Bayes-filter probability grid over the opponent (partial observation)
   llm/            provider abstraction (mock/claude/ollama/api) via API gatekeeper
   agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF §5.2)

@@ -9,17 +9,19 @@ from copthief.strategy.adaptive import AdaptiveStrategy
 from copthief.strategy.base import Strategy
 from copthief.strategy.belief import BeliefStrategy
 from copthief.strategy.heuristic import HeuristicStrategy
+from copthief.strategy.linear_q import LinearQStrategy
 from copthief.strategy.lookahead import LookaheadStrategy
 from copthief.strategy.qlearning import QTableStrategy
 
 
 def build_strategy(cfg: dict[str, Any], rng: random.Random | None = None) -> Strategy:
-    """Return the configured strategy (heuristic/adaptive/lookahead/belief/qtable)."""
+    """Return the configured strategy (heuristic/adaptive/lookahead/belief/qtable/linearq)."""
     kind = str(cfg.get("kind", "heuristic")).lower()
     barriers = bool(cfg.get("cop_uses_barriers", False))
-    if kind == "qtable":
+    if kind in ("qtable", "linearq"):
         params = cfg.get("qtable", {})
-        return QTableStrategy(
+        cls = QTableStrategy if kind == "qtable" else LinearQStrategy
+        return cls(
             learning_rate=float(params.get("learning_rate", 0.1)),
             discount_factor=float(params.get("discount_factor", 0.9)),
             epsilon=float(params.get("epsilon", 0.1)),
