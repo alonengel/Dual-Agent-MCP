@@ -17,8 +17,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 ## Phase 2 — Partial observation, strategy & deception  ✅ complete
 - [x] Partial observation (`vision_radius`, `disclosure`) — DecPOMDP belief model
-- [x] Strategies: adaptive (anticipation) + heuristic + tabular Q-learning + factory
-- [x] Blind-search **hunt** (cop: last-seen → corner sweep); **evasion** (thief: open cells)
+- [x] Strategies: lookahead (depth-1 minimax, default) + adaptive + heuristic + tabular Q-learning + factory
+- [x] Blind-search **hunt** (cop: last-seen → coverage-optimal observation-post sweep, corners on big boards); **evasion** (thief: open cells)
 - [x] **Deception** (thief lies via mirror-decoy) + **counter-intelligence** (cop distrusts a proven liar)
 - [x] Agent-level rule negotiation (vision radius); per-subgame state reset
 - [x] Regenerated demo assets (board + 6 filmstrips + transcript) on seed 3
@@ -61,9 +61,23 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Code**: modular, files ≤150 lines, docstrings explain *why*, consistent style (§3)
 - [x] **Architecture**: single SDK entry point; OOP + Template Method, no duplication (§4)
 - [x] **API gatekeeper**: per-minute **and** per-hour throttle, retries, `get_queue_status` (§5)
-- [x] **Testing**: TDD, ≥85% coverage (~96%), edge cases + graceful errors (§6)
+- [x] **Testing**: TDD, ≥85% coverage (~96%, 156 tests), edge cases + graceful errors (§6)
 - [x] **Quality/config/security**: ruff 0 errors, no hardcoded values, `.env.example`, secrets git-ignored (§7)
 - [x] **Versioning & uv**: `version.py` 1.0.0 + config version validated on startup; uv only + `uv.lock` (§8)
 - [x] **Research**: sensitivity sweep + analysis notebook + visualizations (§9)
 - [x] **UI/UX & cost**: Nielsen heuristics + screenshots; token usage + cost analysis (§10/§11)
 - [x] **Extensibility & standards**: strategy/LLM factories as extension points; ISO/IEC 25010 mapping (§12/§13)
+
+## Enhancements (post-baseline iteration)
+- [x] **Lookahead strategy** (`strategy/lookahead.py`): depth-1 minimax, now the default;
+      strongest of the four policies (replaces `adaptive` as default for both roles)
+- [x] **Strategy arena** (`scripts/strategy_arena.py`): head-to-head win-rate matrix that
+      quantifies policy strength (the evidence behind the default)
+- [x] **Animated GUI** (`gui/animate.py` + `gui/window.py`): live matplotlib window
+      (`selfplay --animate`) and a saved GIF (`replay --save-gif`) — real-time graphical view
+- [x] **Submission gate** (`scripts/check_submission.py`): one-command rubric PASS/FAIL table
+- [x] **Edge-case tests** (`tests/unit/test_edge_cases.py`): co-location, symmetric barrier,
+      dead-ends, capture-vs-survival tie, quota exhaustion
+- [x] **Bugs found & documented** (REPORT §13.1): email-agreement collusion weakness;
+      lookahead-thief self-capture (fixed); subtle rules pinned by tests
+- [x] **CLAUDE.md**: contributor/AI working guide (conventions, layout, run/verify)

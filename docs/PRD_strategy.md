@@ -14,8 +14,10 @@ barriers, `Aᵢ` = move/block, `R` = the scoring table, `Ωᵢ/O` = partial obse
 **Partial observation matters to strategy:** an agent only sees the opponent's exact cell
 within `vision_radius`; otherwise it acts on a (possibly stale) belief. The cop therefore
 **hunts** when it loses the trail — it heads to the thief's *last-seen* cell, then **sweeps
-the board corners** to flush it out — and switches to direct pursuit on re-acquisition; the
-thief exploits being unseen to break contact toward open space (and may deceive).
+coverage-optimal observation posts** whose vision windows tile the whole board (so there is
+no blind spot; on boards too large to sweep within the move budget it falls back to the
+corners — see `orchestrator/patrol.py`) — and switches to direct pursuit on re-acquisition;
+the thief exploits being unseen to break contact toward open space (and may deceive).
 
 **Negotiating the rules to your advantage (inter-group only):** since the vision radius
 strongly favours one side (a wide radius lets the cop re-acquire at will; a narrow one
@@ -58,9 +60,9 @@ Q(s,a) ← Q(s,a) + α · [ r + γ · maxₐ′ Q(s′,a′) − Q(s,a) ]
 - **Hyperparameters (config):** `learning_rate=0.1`, `discount_factor=0.9`,
   `epsilon=0.1` — all read from `config/config.yaml`, never hardcoded.
 
-## 3b. Strategy C — Adaptive (default): anticipation + mid-game reaction
+## 3b. Strategy C — Adaptive: anticipation + mid-game reaction
 
-The default strategy **adapts to the enemy's responses mid-game**. From the opponent's
+This strategy **adapts to the enemy's responses mid-game**. From the opponent's
 last observed cell it computes a movement direction and **projects the opponent's next
 cell**, then aims at that prediction (reusing the heuristic's cornering/mobility
 tie-breaks and need-based barriers):
@@ -71,6 +73,24 @@ tie-breaks and need-based barriers):
   angle rather than only away from the cop's current cell.
 - Belief history resets at each subgame start (`move_number == 0`); predictions are
   clamped to the board.
+
+## 3c. Strategy D — Lookahead (default): depth-1 minimax
+
+The default strategy scores every legal step by the distance that remains **after the
+opponent's best one-step reply**, rather than by the current distance:
+
+- **Cop — interception:** minimise distance to the thief *after it flees*; this both
+  intercepts better than greedy chasing and exploits walls/barriers that cap how far the
+  thief can escape.
+- **Thief — evasion:** maximise distance from the cop *after it gives chase*, with
+  mobility/clearance tie-breaks; this favours pockets the cop cannot close on (behind a
+  barrier or board edge). The cop's own cell is excluded so the thief never self-captures
+  (the post-chase score is non-monotonic at distance 0 — see REPORT §13.1).
+
+**Why it is the default:** [`scripts/strategy_arena.py`](../scripts/strategy_arena.py)
+plays every policy pairing head-to-head (no LLM, perfect info). The lookahead **cop wins in
+every column**; the old `adaptive` policy is the weakest (especially as a thief). It uses
+only legal moves and the standard capture rule, so the game rules (PDF §4) are untouched.
 
 Two **strategy-expert skills** (`.claude/skills/cop-strategist`,
 `.claude/skills/thief-strategist`) document the strategic principles and adaptation cues
