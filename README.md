@@ -216,7 +216,9 @@ shape the cop's pursuing tone and the thief's evasive tone.
 - **Heuristic:** Chebyshev distance with cornering (cop) / open-cell (thief) tie-breaks.
   Barriers are *need-based* (≤5/subgame) — rarely the best move on an open 5×5.
 - **Tabular Q-learning (optional):** ε-greedy with the Bellman update
-  `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards.
+  `Q(s,a) ← Q(s,a) + α[r + γ·maxₐ′Q(s′,a′) − Q(s,a)]`, distance-shaped rewards. **Trained by
+  self-play** ([`scripts/train_qtable.py`](scripts/train_qtable.py), see §9.1): 1,000 keyless
+  games lift the cop from ~1% (untrained) to ~45% win-rate vs the heuristic thief.
 
 **Quantified** by [`scripts/strategy_arena.py`](scripts/strategy_arena.py) (head-to-head,
 no LLM, perfect info). On an 8×8 with a tight 6-round clock (so the thief can actually win),
@@ -261,6 +263,26 @@ A larger board is only ever an **optional inter-group enhancement by mutual agre
 With thief **deception** + a skeptical cop enabled (the default), 5×5 settles at ~**87% cop**
 — the thief's lies lift its share, but counter-intelligence keeps the cop ahead. Reproducible
 in `notebooks/analysis.ipynb`.
+
+### 9.1 Reinforcement-learning training (Q-learning, self-play)
+
+The optional Q-learning agents are **trained by self-play** — reinforcement learning, not LLM
+fine-tuning — over many fast, keyless engine games with ε annealed from explore to exploit
+([`src/copthief/training.py`](src/copthief/training.py), CLI
+[`scripts/train_qtable.py`](scripts/train_qtable.py)). On a tight 5×5/4-round clock (so the
+cop cannot win by default), **1,000 games** lift the greedy cop from a ~1% untrained baseline
+to a **~45%** win-rate against a fixed heuristic thief:
+
+![Q-learning training curve](assets/training_curve.png)
+
+The curve plateaus quickly: the tabular state is the *clipped relative offset* of the
+opponent (49 states), so the policy converges to competent pursuit but its ceiling is set by
+that representation, not by data — scaling past 1k games does not raise it (richer
+state/features would). Run it yourself:
+
+```bash
+uv run python scripts/train_qtable.py --games 1000        # saves Q-tables + assets/training_curve.png
+```
 
 **Visual proof** — four complementary views (one of them a real-time graphical GUI). The
 **live CLI** (`selfplay --verbose`) prints the board and the agents' free-language dialogue
@@ -351,7 +373,7 @@ in the cents per full match.
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **178 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **183 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config validated on startup.
 - **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
@@ -509,9 +531,10 @@ src/copthief/
   shared/         config, logging/audit, version, API gatekeeper, token-usage meter
   gui/            live ASCII board, animated GUI window, GIF/PNG/filmstrip renderers
   replay.py       deterministic audit-log replay (reproducibility / regression guard)
+  training.py     reinforcement-learning trainer (Q-learning self-play, eps-decay, eval)
   commands.py     CLI subcommand handlers (main.py is a thin parser/dispatcher)
 docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, COST, BONUS_ASSUMPTIONS, adr/
-scripts/          capture_demo (assets), strategy_arena (policy eval), check_line_cap + check_submission (gates)
+scripts/          capture_demo (assets), strategy_arena (policy eval), train_qtable (RL training), check_line_cap + check_submission (gates)
 config/  tests/  results/  logs/  assets/  notebooks/
 CLAUDE.md         contributor/AI working guide (conventions, layout, run/verify commands)
 ```

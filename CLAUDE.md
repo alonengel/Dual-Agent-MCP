@@ -31,6 +31,7 @@ referees. Built for UoH Exercise 6. The README doubles as the scientific report.
 | `strategy/` | Move strategies: lookahead (default, depth-1 minimax), belief, adaptive, heuristic, Q-learning |
 | `belief/` | Bayes-filter probability grid over the opponent (partial observation) |
 | `replay.py` | Deterministic audit-log replay — reproducibility / regression guard |
+| `training.py` | RL trainer — Q-learning self-play (`scripts/train_qtable.py`), ε-decay + eval |
 | `interop/` | Inter-group (bonus) adapter: messaging, commit-reveal, report hash |
 | `reporting/` | JSON reports (§9.1/9.2) + Gmail emailer |
 | `gui/` | Board rendering — see "GUI / matplotlib" below |

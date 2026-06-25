@@ -21,6 +21,7 @@ coverage.xml
 # Runtime artifacts
 logs/
 results/*.json
+results/*.npy
 assets/runtime/
 
 # OS / IDE

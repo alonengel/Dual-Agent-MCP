@@ -61,7 +61,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Code**: modular, files ≤150 lines, docstrings explain *why*, consistent style (§3)
 - [x] **Architecture**: single SDK entry point; OOP + Template Method, no duplication (§4)
 - [x] **API gatekeeper**: per-minute **and** per-hour throttle, retries, `get_queue_status` (§5)
-- [x] **Testing**: TDD, ≥85% coverage (~96%, 178 tests), edge cases + graceful errors (§6)
+- [x] **Testing**: TDD, ≥85% coverage (~96%, 183 tests), edge cases + graceful errors (§6)
 - [x] **Quality/config/security**: ruff 0 errors, no hardcoded values, `.env.example`, secrets git-ignored (§7)
 - [x] **Versioning & uv**: `version.py` 1.0.0 + config version validated on startup; uv only + `uv.lock` (§8)
 - [x] **Research**: sensitivity sweep + analysis notebook + visualizations (§9)
@@ -86,3 +86,5 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Deterministic replay** (`replay.py`): re-runs the audit log through the engine and
       asserts positions + outcomes (reproducibility / regression guard)
 - [x] **ADRs split into `docs/adr/`**: nine numbered decision records (was inline in PLAN.md)
+- [x] **RL training** (`training.py` + `scripts/train_qtable.py`): Q-learning self-play over
+      1k keyless games, ε-decay, learning-curve PNG (cop ~1% untrained -> ~45% vs heuristic)
