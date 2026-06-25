@@ -46,7 +46,12 @@ def run_selfplay(args: argparse.Namespace) -> int:
     sdk = CopThiefSDK(seed=args.seed)
     reporter = functools.partial(print, flush=True) if args.verbose else None
     board = _board_renderer(args)
-    match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
+    if hasattr(board, "run_match"):
+        # Live window: run the match on a worker thread so the GUI stays responsive
+        # (the event loop keeps pumping while a turn blocks on a slow LLM call).
+        match = board.run_match(sdk, args.games, reporter)
+    else:
+        match = sdk.run_self_play(games=args.games, reporter=reporter, board_render=board)
     path = sdk.report_and_save(match)
     print(f"Totals: {match['totals']}\nReport: {path}")
 

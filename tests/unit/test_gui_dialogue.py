@@ -27,15 +27,28 @@ def test_draw_log_renders_recent_entries_coloured_by_speaker() -> None:
     plt.close(fig)
 
 
-def test_live_window_accumulates_dialogue_with_correct_speaker() -> None:
+def test_live_window_enqueues_snapshots_with_correct_speaker() -> None:
+    # enqueue runs on the worker thread: it snapshots state (no drawing) and attributes the
+    # message to the agent that just moved (turn has already advanced to the other role).
     window = LiveWindow()
-    if not window._ok:  # no usable backend at all — nothing to assert
-        return
     game = Subgame(Board(5, 5, 1, True), Position(4, 5), Position(2, 3), 25, 5)
     game.apply(Move(Role.THIEF, Action.MOVE, 1, 0))  # thief acts; turn advances to cop
-    window(game, "you'll never catch me")
-    game.apply(Move(Role.COP, Action.MOVE, 0, -1))   # cop acts; turn advances to thief
-    window(game, "I'm right behind you")
+    window.enqueue(game, "you'll never catch me")
+    frame = window._queue.get_nowait()
+    assert frame["speaker"] == "thief" and frame["message"] == "you'll never catch me"
+    assert frame["thief"] == (3, 3)  # (2,3) stepped east by the applied move
+
+
+def test_live_window_draw_accumulates_the_dialogue_log() -> None:
+    window = LiveWindow()
+    if not window._ok:  # no usable axes/backend — _draw needs them
+        return
+    window._draw({"w": 5, "h": 5, "o": 1, "cop": (4, 5), "thief": (5, 3),
+                  "barriers": set(), "move": 0, "turn": "cop",
+                  "speaker": "thief", "message": "you'll never catch me"})
+    window._draw({"w": 5, "h": 5, "o": 1, "cop": (4, 4), "thief": (5, 3),
+                  "barriers": set(), "move": 1, "turn": "thief",
+                  "speaker": "cop", "message": "I'm right behind you"})
     assert window._log == [("thief", "you'll never catch me"), ("cop", "I'm right behind you")]
 
 
