@@ -319,7 +319,8 @@ uv run python scripts/train_qtable.py --games 200000                   # tabular
   distance** — the depth-1 lookahead signal handed to the learner). Weights are learned by
   **Monte-Carlo** return (bootstrapped TD diverged — the "deadly triad"). The features generalise
   across all positions, so it learns to weight cornering + capture *better than the hand-tuned
-  minimax*, reaching **~0.80** — stable across seeds, and **> 0.66 vs every thief type**.
+  minimax*, reaching **~0.80** at convergence (short runs are higher-variance — the deadly
+  triad), and **> 0.66 vs every thief type**.
 
 So the lever was never more games or a bigger table — it was the **right features + a stable
 update**. (The failed attempts are kept as documented negative results, per the lecture's
