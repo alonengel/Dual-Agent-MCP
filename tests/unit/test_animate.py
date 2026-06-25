@@ -43,6 +43,21 @@ def test_frames_skip_non_turns_and_track_barriers(tmp_path: Path) -> None:
     assert frames[3]["barriers"] == set()
 
 
+def test_subgame_start_emits_a_true_start_frame(tmp_path: Path) -> None:
+    # A subgame_start carries the genuine opening layout; the thief then moves.
+    log = [
+        {"event": "subgame_start", "index": 1, "cop": [4, 5], "thief": [2, 3]},
+        {"event": "turn", "index": 1, "move": 0, "role": "thief", "action": "move",
+         "cop": [4, 5], "thief": [1, 3]},
+    ]
+    path = tmp_path / "game_audit.log"
+    path.write_text("\n".join(json.dumps(t) for t in log), encoding="utf-8")
+    frames = _frames(path)
+    assert frames[0]["role"] == "start"  # the very first frame is the real start...
+    assert frames[0]["thief"] == (2, 3)  # ...showing (2,3), not the post-move (1,3)
+    assert frames[1]["role"] == "thief" and frames[1]["thief"] == (1, 3)
+
+
 def test_frames_missing_file_is_empty(tmp_path: Path) -> None:
     assert _frames(tmp_path / "does_not_exist.log") == []
 

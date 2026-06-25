@@ -25,6 +25,11 @@ from copthief.gui.board_draw import draw_board, legend_handles
 def _frames(audit_path: Path) -> list[dict]:
     """Flatten the audit log into per-move frames with cumulative barriers.
 
+    Each subgame opens with a ``start`` frame taken from the ``subgame_start``
+    event — the *true* initial layout, before anyone has moved — so the very
+    first thing the viewer sees is the real starting position rather than the
+    board after the thief's opening step. Subsequent frames are the post-move
+    boards recorded by each ``turn`` event (hence labelled "moved", past tense).
     Barriers reset at every subgame boundary; a frame inherits all barriers the
     cop has dropped so far within the current subgame.
     """
@@ -35,7 +40,16 @@ def _frames(audit_path: Path) -> list[dict]:
     barriers: set[tuple[int, int]] = set()
     current_index: int | None = None
     for entry in entries:
-        if entry.get("event") != "turn":
+        event = entry.get("event")
+        if event == "subgame_start":
+            current_index, barriers = entry["index"], set()
+            frames.append({
+                "index": entry["index"], "move": 0, "role": "start",
+                "cop": tuple(entry["cop"]), "thief": tuple(entry["thief"]),
+                "barriers": set(),
+            })
+            continue
+        if event != "turn":
             continue
         if entry["index"] != current_index:
             current_index, barriers = entry["index"], set()
@@ -72,7 +86,11 @@ def build_animation(audit_path: Path, interval: int = 700) -> tuple | None:
 
     def _render(frame: dict) -> None:
         ax.clear()
-        title = (f"Subgame {frame['index']} · move {frame['move']} · {frame['role']} to act")
+        if frame["role"] == "start":
+            title = f"Subgame {frame['index']} · start"
+        else:
+            title = (f"Subgame {frame['index']} · move {frame['move']} · "
+                     f"{frame['role']} moved")
         draw_board(ax, width, height, origin, frame["cop"], frame["thief"],
                    frame["barriers"], title=title)
 
