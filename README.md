@@ -276,14 +276,21 @@ See `docs/PRD_interop.md` and `docs/BONUS_ASSUMPTIONS.md` for the full negotiati
 ## 10. Cost analysis
 
 Every external LLM (and Gmail) call routes through the central **API gatekeeper**
-(rate-limit + retry, config-driven) and a **usage meter** (`shared/usage.py`) that
-estimates input/output tokens (~4 chars/token) and USD cost from a configurable per-model
-price table. After each game a `results/usage_<ts>.json` is written with the per-model
-breakdown and totals. `est_usd` prices tokens at **API rates** — the actual cost when the
-Anthropic-API path is used and the **API-equivalent** cost (amount saved) when the free
-Claude-CLI subscription serves the call. Because messages are short (one–two sentences)
-token use is minimal: at Opus 4.8 rates one sub-game is **≈ $0.08** and a full 6-subgame
-match is **well under $1** on the API — and **free** on the CLI subscription.
+(rate-limit + retry, config-driven) and a **token-usage meter** (`shared/usage.py`).
+After each game a `results/usage_<ts>.json` is written with per-model breakdown and
+`est_usd` at API list prices.
+
+**What we actually paid** (full detail in [`docs/COST.md`](docs/COST.md)):
+
+| Path | Cost |
+|------|------|
+| **Claude CLI / Claude Code** (primary — self-play, demo, live bonus) | **$0** (included in subscription) |
+| **Anthropic API key** (fallback — live MCP inter-group testing with ImreEyal) | **≈ $0.15** measured |
+| **Gmail API** (§9.1 / §9.2 report email) | **$0** (free quota) |
+
+The CLI is the default; the API key stays disabled in the Anthropic console except during
+brief tests. Messages are short (one–two sentences), so even the paid API path stays
+in the cents per full match.
 
 ## 11. Quality & engineering
 
@@ -410,7 +417,7 @@ src/copthief/
   reporting/      JSON report builder + Gmail emailer
   shared/         config, logging/audit, version, API gatekeeper, token-usage meter
   gui/            live ASCII board + final-board viewer + per-subgame filmstrips
-docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, BONUS_ASSUMPTIONS
+docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, COST, BONUS_ASSUMPTIONS
 config/  tests/  results/  logs/  assets/  notebooks/
 ```
 
@@ -419,7 +426,8 @@ config/  tests/  results/  logs/  assets/  notebooks/
 This README **is** the scientific report (PDF §11). [`docs/PRD.md`](docs/PRD.md),
 [`docs/PLAN.md`](docs/PLAN.md) (architecture/ADRs), [`docs/PRD_strategy.md`](docs/PRD_strategy.md),
 [`docs/PROMPTS.md`](docs/PROMPTS.md) (prompt-engineering log),
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (cloud + inter-group bonus setup), and
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (cloud + inter-group bonus setup),
+[`docs/COST.md`](docs/COST.md) (measured LLM + Gmail costs), and
 [`docs/archive/ngrok.md`](docs/archive/ngrok.md) (ngrok free-tier failures + workarounds) cover the rest.
 
 ## Security
