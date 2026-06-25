@@ -348,6 +348,25 @@ minimax *thief* — minimax-vs-minimax is a 1.00 cop win). The search is sub-mil
 search stories are complementary: **RL wins the fixed-horizon contest, search wins outright when
 allowed to look deeper** (regression-guarded by `tests/unit/test_minimax.py`).
 
+**Negative result — minimax does *not* improve the thief.** Symmetry suggests the same deep
+search should also make the strongest evader, but it does not against the cops it actually faces.
+Minimax optimises against a *worst-case* opponent, so the minimax thief plays over-pessimistically
+and fails to exploit a myopic lookahead cop's mistakes — measured thief survival (bigger boards /
+looser clocks, where evasion is even possible):
+
+| Thief vs cop | lookahead thief | minimax thief | minimax thief + richer leaf |
+|---|---|---|---|
+| 8×8 / 6-round vs **lookahead** cop | **0.69** | 0.63 | 0.63 |
+| 8×8 / 6-round vs **minimax** cop | 0.45 | 0.45 | **0.46** |
+| 6×6 / 5-round vs **lookahead** cop | **0.41** | 0.25 | 0.25 |
+
+The minimax thief only edges ahead against a *perfect* minimax cop (and on the real 5×5 game the
+thief is a forced loss regardless), while a richer evasion leaf (mobility + wall-clearance) adds
+nothing. So we keep `lookahead` as the thief: against realistic, sub-optimal cops it is the better
+response. Lesson: **minimax ≠ best response to a weak opponent** — robustness and exploitation are
+different objectives. The thief's real leverage is elsewhere — *partial observation and deception*
+(the belief grid, §7), not deeper pursuit search.
+
 **Visual proof** — four complementary views (one of them a real-time graphical GUI). The
 **live CLI** (`selfplay --verbose`) prints the board and the agents' free-language dialogue
 every turn (here the thief *lies* and the cop sees through it):
