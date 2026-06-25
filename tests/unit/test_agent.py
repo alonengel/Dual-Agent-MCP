@@ -69,11 +69,11 @@ def test_decide_uses_belief(board: Board) -> None:
     assert (move.dx, move.dy) == (1, 1)  # steps toward the believed (5,5)
 
 
-def test_blind_cop_hunts_corner(board: Board) -> None:
-    agent = _agent(Role.COP)  # no belief, no last_seen → sweep toward first corner (1,1)
+def test_blind_cop_sweeps_first_observation_post(board: Board) -> None:
+    agent = _agent(Role.COP)  # no belief, no last_seen → head to first post (2,2) on 5x5
     obs = Observation(Role.COP, Position(3, 3), 0, 25, 5)
     move = agent.decide(obs, board)
-    assert (move.dx, move.dy) == (-1, -1)
+    assert (move.dx, move.dy) == (-1, -1)  # step from (3,3) toward observation post (2,2)
 
 
 def test_blind_cop_makes_for_last_seen(board: Board) -> None:

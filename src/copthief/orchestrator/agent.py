@@ -12,7 +12,7 @@ from copthief.constants import Action, Role
 from copthief.domain.board import Board
 from copthief.domain.models import Move, Observation, Position
 from copthief.llm.base import LLMProvider
-from copthief.orchestrator import dialogue
+from copthief.orchestrator import dialogue, patrol
 from copthief.strategy.base import Strategy, chebyshev
 
 
@@ -29,6 +29,7 @@ class Agent:
         # faster, never self-captures) while the LLM still voices every turn in free text.
         self.llm_moves = llm_moves
         self.skeptical = False  # a counter-intelligence cop that distrusts proven lies
+        self.vision_radius = 1   # last radius seen in perceive(); drives the blind patrol
         self.belief: Position | None = None
         self.belief_trusted = False  # True only when the belief came from direct sight
         self.trust_claims = True     # cleared once a stated position is exposed as a lie
@@ -64,6 +65,7 @@ class Agent:
         cop that reaches a *claimed* cell and finds nobody concludes it was deceived and
         stops trusting the rival's stated positions for the rest of the subgame.
         """
+        self.vision_radius = vision_radius  # remember it for the blind-search patrol
         if chebyshev(self_pos, opponent_true) <= vision_radius:
             self.belief = opponent_true
             self.belief_trusted = True
@@ -105,15 +107,19 @@ class Agent:
         return self._hunt(here, board)
 
     def _hunt(self, here: Position, board: Board) -> Position:
-        """Blind cop: head to the last-seen cell, then sweep the corners to flush the thief."""
+        """Blind cop: head to the last-seen cell, then sweep waypoints to flush the thief.
+
+        The sweep visits coverage-optimal observation posts (no blind spot) on small boards
+        and falls back to the corners on larger ones — see :mod:`copthief.orchestrator.patrol`.
+        """
         if self.last_seen is not None and here != self.last_seen:
             return self.last_seen
         self.last_seen = None
-        corners = _corners(board)
-        spot = corners[self._patrol % len(corners)]
+        route = patrol.patrol_route(board, self.vision_radius)
+        spot = route[self._patrol % len(route)]
         if here == spot:
             self._patrol += 1
-            spot = corners[self._patrol % len(corners)]
+            spot = route[self._patrol % len(route)]
         return spot
 
     def voice(self, obs: Observation, move: Move, disclosed: Position | None) -> str:
@@ -124,10 +130,3 @@ class Agent:
 def _center(board: Board) -> Position:
     """Board centre — the thief's flee-from anchor when it cannot see the cop."""
     return Position(board.origin + board.width // 2, board.origin + board.height // 2)
-
-
-def _corners(board: Board) -> list[Position]:
-    """The four board corners — the cop's patrol circuit while hunting blind."""
-    xs = (board.origin, board.origin + board.width - 1)
-    ys = (board.origin, board.origin + board.height - 1)
-    return [Position(x, y) for x in xs for y in ys]
