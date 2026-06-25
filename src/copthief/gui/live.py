@@ -28,8 +28,12 @@ def _cell(pos: tuple[int, int], cop: tuple[int, int], thief: tuple[int, int],
     return _EMPTY
 
 
-def render_live(game: Subgame) -> str:
-    """Render the current board as text rows (top row = highest y), with a legend."""
+def render_live(game: Subgame, message: str = "") -> str:
+    """Render the current board as text rows (top row = highest y), with a legend.
+
+    ``message`` (the turn's taunt) is part of the board-render hook signature but unused
+    here: in the terminal the dialogue is already printed on its own line by the reporter.
+    """
     board = game.board
     cop, thief = game.cop.as_tuple(), game.thief.as_tuple()
     rows = []

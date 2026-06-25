@@ -25,7 +25,7 @@ class MatchRunner:
     def __init__(self, game_cfg: dict[str, Any], scoring: dict[str, int], cop: Agent,
                  thief: Agent, audit: AuditLog, rng: random.Random | None = None,
                  reporter: Callable[[str], None] | None = None,
-                 board_render: Callable[[Subgame], str] | None = None):
+                 board_render: Callable[..., str] | None = None):
         self.game_cfg = game_cfg
         self.scorebook = ScoreBook(scoring)
         self.agents = {Role.COP: cop, Role.THIEF: thief}
@@ -108,7 +108,7 @@ class MatchRunner:
         )
         self._say(f"  {role.value} m{game.move_number}: {message}")
         if self.board_render is not None:
-            self._say(self.board_render(game))
+            self._say(self.board_render(game, message))
         return message
 
 

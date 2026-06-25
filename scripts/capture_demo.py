@@ -74,7 +74,8 @@ def main() -> int:
     root = sdk.config.root
     snapshot = render_audit(sdk.audit.path, root)
     filmstrips = render_all_subgames(sdk.audit.path, root)
-    animation = animate_audit(sdk.audit.path, root, save_gif=True, show=False)
+    # Slower frames so the per-turn taunts in the caption are actually readable.
+    animation = animate_audit(sdk.audit.path, root, save_gif=True, show=False, interval=1100)
     transcript = _write_transcript(sdk.audit.path, root / "assets")
     print(f"totals: {match['totals']}")
     print(f"snapshot:   {snapshot}")

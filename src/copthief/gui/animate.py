@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import contextlib
 import json
+import textwrap
 from pathlib import Path
 
 from copthief.gui.board_draw import draw_board, legend_handles
+
+_SPEAKER_COLOUR = {"cop": "tab:blue", "thief": "tab:red"}
 
 # NB: matplotlib.pyplot is imported lazily inside the functions so importing this
 # module never locks a backend. Callers that need headless output (capture_demo,
@@ -46,7 +49,7 @@ def _frames(audit_path: Path) -> list[dict]:
             frames.append({
                 "index": entry["index"], "move": 0, "role": "start",
                 "cop": tuple(entry["cop"]), "thief": tuple(entry["thief"]),
-                "barriers": set(),
+                "barriers": set(), "message": "",
             })
             continue
         if event != "turn":
@@ -58,7 +61,7 @@ def _frames(audit_path: Path) -> list[dict]:
         frames.append({
             "index": entry["index"], "move": entry["move"], "role": entry["role"],
             "cop": tuple(entry["cop"]), "thief": tuple(entry["thief"]),
-            "barriers": set(barriers),
+            "barriers": set(barriers), "message": entry.get("message", ""),
         })
     return frames
 
@@ -72,6 +75,17 @@ def _grid() -> tuple[int, int, int]:
     return int(width), int(height), int(game.get("origin", 1))
 
 
+def _caption(ax, frame: dict) -> None:
+    """Render the turn's free-language taunt below the board, coloured by speaker."""
+    message = frame.get("message", "")
+    if not message:
+        return
+    text = message if len(message) <= 160 else message[:157] + "…"
+    wrapped = textwrap.fill(f'{frame["role"]}: "{text}"', width=50)
+    ax.set_xlabel(wrapped, fontsize=7, style="italic",
+                  color=_SPEAKER_COLOUR.get(frame["role"], "0.2"))
+
+
 def build_animation(audit_path: Path, interval: int = 700) -> tuple | None:
     """Build (figure, FuncAnimation) for the recorded game, or None if no frames."""
     import matplotlib.pyplot as plt
@@ -81,8 +95,9 @@ def build_animation(audit_path: Path, interval: int = 700) -> tuple | None:
     if not frames:
         return None
     width, height, origin = _grid()
-    fig, ax = plt.subplots(figsize=(4.2, 4.2))
+    fig, ax = plt.subplots(figsize=(4.6, 5.4))
     fig.legend(handles=legend_handles(), loc="upper center", ncol=3, fontsize=8)
+    fig.subplots_adjust(top=0.86, bottom=0.30)  # leave room for the dialogue caption
 
     def _render(frame: dict) -> None:
         ax.clear()
@@ -93,6 +108,7 @@ def build_animation(audit_path: Path, interval: int = 700) -> tuple | None:
                      f"{frame['role']} moved")
         draw_board(ax, width, height, origin, frame["cop"], frame["thief"],
                    frame["barriers"], title=title)
+        _caption(ax, frame)
 
     anim = FuncAnimation(fig, _render, frames=frames, interval=interval,
                          blit=False, repeat=False)

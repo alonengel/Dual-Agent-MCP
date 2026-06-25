@@ -15,7 +15,7 @@ from copthief.gui.animate import _frames, animate_audit, build_animation  # noqa
 _TURNS = [
     {"event": "negotiation", "role": "cop"},  # ignored by the frame extractor
     {"event": "turn", "index": 1, "move": 0, "role": "thief", "action": "move",
-     "cop": [3, 3], "thief": [1, 1]},
+     "cop": [3, 3], "thief": [1, 1], "message": "You'll never catch me!"},
     {"event": "turn", "index": 1, "move": 1, "role": "cop", "action": "block",
      "cop": [3, 3], "thief": [1, 1]},
     {"event": "turn", "index": 1, "move": 1, "role": "thief", "action": "move",
@@ -41,6 +41,13 @@ def test_frames_skip_non_turns_and_track_barriers(tmp_path: Path) -> None:
     # ...but subgame 2 starts with a clean board.
     assert frames[3]["index"] == 2
     assert frames[3]["barriers"] == set()
+
+
+def test_frames_carry_the_turn_message(tmp_path: Path) -> None:
+    # The dialogue/taunt is threaded onto each turn frame for the caption.
+    frames = _frames(_write_audit(tmp_path))
+    assert frames[0]["message"] == "You'll never catch me!"
+    assert frames[1]["message"] == ""  # a turn with no recorded message is blank
 
 
 def test_subgame_start_emits_a_true_start_frame(tmp_path: Path) -> None:

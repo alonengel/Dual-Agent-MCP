@@ -8,7 +8,7 @@ from __future__ import annotations
 import random
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from copthief.constants import Role
 from copthief.llm.factory import build_llm_clients, build_provider
@@ -18,9 +18,6 @@ from copthief.reporting.report import build_internal_report, save_report
 from copthief.shared.config import Config
 from copthief.shared.logger import AuditLog, setup_logging
 from copthief.strategy.factory import build_strategy
-
-if TYPE_CHECKING:
-    from copthief.domain.subgame import Subgame
 
 
 class CopThiefSDK:
@@ -64,7 +61,7 @@ class CopThiefSDK:
 
     def run_self_play(self, games: int | None = None,
                       reporter: Callable[[str], None] | None = None,
-                      board_render: Callable[[Subgame], str] | None = None,
+                      board_render: Callable[..., str] | None = None,
                       llm_moves: bool = True) -> dict[str, Any]:
         """Run a local self-game and return the match result dict.
 
