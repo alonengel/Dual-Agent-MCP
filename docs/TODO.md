@@ -91,3 +91,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Linear function approximation** (`strategy/linear_q.py`): afterstate features +
       Monte-Carlo return reaches ~0.80 cop win-rate, **beating the 0.66 lookahead minimax**
       across thief types (REPORT §9.1); documents the failed richer-table / reward-shaping A/Bs
+- [x] **Depth-N minimax** (`strategy/minimax.py`): generalises the depth-1 lookahead to a full
+      game-tree search; depth-6 **solves the 5×5/4-round game** (capture from every start, 1.00
+      win-rate vs every thief). Establishes the ceiling: the ~0.80 plateau was a depth limit of
+      the one-ply policies, not the game (REPORT §9.1)

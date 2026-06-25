@@ -38,9 +38,10 @@ The PDF mandates a working MCP pipeline and free-language play; we added the fol
 | **Measured cost ledger** | [`docs/COST.md`](docs/COST.md): CLI $0, API ~$0.15/6 games (Opus 4.8), Gmail free |
 | **Animated real-time GUI** | `selfplay --animate` live matplotlib window + `replay --save-gif` → `assets/demo_animation.gif` (headless-safe) |
 | **Submission self-check gate** | `scripts/check_submission.py` maps every rubric item to an automated PASS/FAIL check |
-| **Depth-1 minimax strategy** | `strategy/lookahead.py` acts against the opponent's best reply — strongest of the four policies (the default) |
+| **Depth-1 minimax strategy** | `strategy/lookahead.py` acts against the opponent's best reply — the fast default |
+| **Depth-N minimax that solves it** | `strategy/minimax.py` — full game-tree search; depth-6 forces capture from *every* 5×5/4-round start (1.00 win-rate, §9.1) |
 | **Strategy arena** | `scripts/strategy_arena.py` quantifies policy strength head-to-head (win-rate matrix), the evidence behind the default |
-| **RL that beats the minimax** | `strategy/linear_q.py` — linear afterstate-feature Q-learning, Monte-Carlo trained, reaches ~0.80 vs the 0.66 lookahead bar (§9.1) |
+| **RL that beats the depth-1 minimax** | `strategy/linear_q.py` — linear afterstate-feature Q-learning, Monte-Carlo trained, reaches ~0.80 vs the 0.66 lookahead bar (§9.1) |
 
 ## 2. Problem framing — a DecPOMDP
 
@@ -206,7 +207,12 @@ shape the cop's pursuing tone and the thief's evasive tone.
 - **Lookahead (default, depth-1 minimax):** scores each legal step by the distance left
   *after the opponent's best reply* — the cop minimises distance once the thief flees; the
   thief maximises distance once the cop gives chase (exploiting walls/barriers that cap the
-  chase). Strongest of the four; see the arena numbers below.
+  chase). A fast, strong default; the arena numbers below quantify it.
+- **Minimax (depth-N, the strongest policy):** [`strategy/minimax.py`](src/copthief/strategy/minimax.py)
+  generalises the lookahead to a full game-tree search — one cop-perspective value (cop
+  maximises, thief minimises), capture/timeout terminals, a Chebyshev-distance leaf, and a
+  per-decide transposition table. With `depth ≥ 6` it **solves the 5×5/4-round game** (capture
+  from every start, 1.00 win-rate; §9.1). Sub-millisecond per move; opt-in via `strategy.kind: minimax`.
 - **Belief (probabilistic, partial-observation):** maintains a **Bayes-filter grid** over the
   opponent's cell ([`belief/grid.py`](src/copthief/belief/grid.py)) — `diffuse` (physics),
   `observe_not_at` (hard negative info from commit-reveal), `observe_claim` (soft prose nudge)
@@ -228,14 +234,15 @@ shape the cop's pursuing tone and the thief's evasive tone.
 
 **Quantified** by [`scripts/strategy_arena.py`](scripts/strategy_arena.py) (head-to-head,
 no LLM, perfect info). On an 8×8 with a tight 6-round clock (so the thief can actually win),
-cop win-rate by policy — **lookahead is the best cop in every column**, and `adaptive` is the
-weakest thief:
+cop win-rate by policy — **minimax is the best cop in every column** (and the hardest thief to
+catch), `lookahead` is the strongest *one-ply* cop, and `adaptive` is the weakest thief:
 
-| cop ↓ \ thief → | heuristic | adaptive | lookahead |
-|---|---|---|---|
-| heuristic | 20% | 47% | 19% |
-| adaptive  | 30% | 37% | 20% |
-| **lookahead** | **35%** | **66%** | **38%** |
+| cop ↓ \ thief → | heuristic | adaptive | lookahead | minimax |
+|---|---|---|---|---|
+| heuristic | 18% | 60% | 18% | 20% |
+| adaptive  | 25% | 28% | 35% | 23% |
+| lookahead | 25% | 65% | 38% | 38% |
+| **minimax** | **68%** | **68%** | **77%** | **65%** |
 
 With a normal round budget the king-move cop always catches on an open board, so there the
 metric is *capture speed*: the lookahead cop is consistently fastest. (A subtle bug found
@@ -317,6 +324,29 @@ uv run python scripts/train_qtable.py --games 200000                   # tabular
 So the lever was never more games or a bigger table — it was the **right features + a stable
 update**. (The failed attempts are kept as documented negative results, per the lecture's
 "document what you tried" guidance.)
+
+**How far is the ceiling? Solving the game with deeper search.** Every policy above acts on a
+**one-ply horizon**. How much is left on the table? A full game-tree search — an *optimal* cop —
+captures the lookahead thief from **all 600 starts**: the 5×5 / 4-round game is a **forced cop
+win**, so the ~0.80 plateau is a limit of the *depth-1 policy*, not of the game.
+[`strategy/minimax.py`](src/copthief/strategy/minimax.py) generalises the depth-1 lookahead to
+**depth-`N` minimax** (a single cop-perspective value: the cop maximises it, the thief minimises
+it), and the win-rate climbs with depth until the game is solved:
+
+| Cop policy (5×5 / 4-round, all 600 starts) | vs heuristic | vs adaptive | vs lookahead |
+|---|---|---|---|
+| Lookahead (depth-1 minimax) | 0.65 | 0.86 | 0.65 |
+| **Linear FA** (learned, depth-1) | **0.79** | 0.85 | **0.79** |
+| Minimax depth-2 | 0.65 | 0.86 | 0.65 |
+| Minimax depth-4 | 0.94 | 0.91 | 0.94 |
+| **Minimax depth-6** | **1.00** | **1.00** | **1.00** |
+
+Two honest takeaways: at **equal depth-1, learning beats hand-tuning** (linear FA 0.79 vs lookahead
+0.65); and **lifting the depth cap solves the game** (depth-6 → 1.00, unbeaten even by an optimal
+minimax *thief* — minimax-vs-minimax is a 1.00 cop win). The search is sub-millisecond per move on
+5×5 thanks to a per-decide transposition table; select it with `strategy.kind: minimax`. The RL and
+search stories are complementary: **RL wins the fixed-horizon contest, search wins outright when
+allowed to look deeper** (regression-guarded by `tests/unit/test_minimax.py`).
 
 **Visual proof** — four complementary views (one of them a real-time graphical GUI). The
 **live CLI** (`selfplay --verbose`) prints the board and the agents' free-language dialogue

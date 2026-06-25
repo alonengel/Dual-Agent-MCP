@@ -20,7 +20,7 @@ from copthief.domain.models import Observation
 from copthief.domain.subgame import Subgame
 from copthief.strategy.factory import build_strategy
 
-KINDS = ("heuristic", "adaptive", "lookahead")
+KINDS = ("heuristic", "adaptive", "lookahead", "minimax")
 
 
 def _start_cells(board: Board, rng: random.Random) -> tuple:

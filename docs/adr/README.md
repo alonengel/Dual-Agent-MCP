@@ -14,3 +14,4 @@ get the next number and never rewrite history — a superseding ADR links back t
 | [0007](0007-interop-additive-adapter.md) | Inter-group bonus is an additive peer adapter |
 | [0008](0008-probabilistic-belief-grid.md) | Probabilistic belief grid for partial observation |
 | [0009](0009-deterministic-replay.md) | Deterministic replay of the audit log |
+| [0010](0010-depth-n-minimax.md) | Depth-N minimax search strategy (solves the 5×5 game) |
