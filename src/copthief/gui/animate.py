@@ -16,9 +16,7 @@ import json
 import textwrap
 from pathlib import Path
 
-from copthief.gui.board_draw import draw_board, legend_handles
-
-_SPEAKER_COLOUR = {"cop": "tab:blue", "thief": "tab:red"}
+from copthief.gui.board_draw import SPEAKER_COLOUR, draw_board, legend_handles
 
 # NB: matplotlib.pyplot is imported lazily inside the functions so importing this
 # module never locks a backend. Callers that need headless output (capture_demo,
@@ -83,7 +81,7 @@ def _caption(ax, frame: dict) -> None:
     text = message if len(message) <= 160 else message[:157] + "…"
     wrapped = textwrap.fill(f'{frame["role"]}: "{text}"', width=50)
     ax.set_xlabel(wrapped, fontsize=7, style="italic",
-                  color=_SPEAKER_COLOUR.get(frame["role"], "0.2"))
+                  color=SPEAKER_COLOUR.get(frame["role"], "0.2"))
 
 
 def build_animation(audit_path: Path, interval: int = 700) -> tuple | None:

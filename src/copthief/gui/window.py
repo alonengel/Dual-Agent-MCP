@@ -2,7 +2,10 @@
 
 This is the real-time interface: it plugs into ``MatchRunner.board_render`` (the
 same per-turn hook the ASCII board uses) and updates an interactive matplotlib
-figure as the game unfolds, so the agents are seen moving while they play.
+figure as the game unfolds, so the agents are seen moving while they play. A
+side panel shows the running dialogue log (the taunts), so the whole game —
+movement *and* free-language messages — is visible in the GUI itself, no terminal
+needed.
 
 It is intentionally best-effort: on a headless machine (no interactive backend)
 construction fails gracefully and the call becomes a no-op, so a ``--animate``
@@ -12,23 +15,21 @@ run never crashes a CI box or a display-less server.
 from __future__ import annotations
 
 import contextlib
-import textwrap
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from copthief.domain.subgame import Subgame
 
-_SPEAKER_COLOUR = {"cop": "tab:blue", "thief": "tab:red"}
-
 
 class LiveWindow:
-    """Callable per-turn board renderer backed by an interactive matplotlib figure."""
+    """Callable per-turn renderer: an interactive board plus a live dialogue log."""
 
-    def __init__(self, pause: float = 0.6):
+    def __init__(self, pause: float = 0.6, max_log: int = 12):
         self.pause = pause
+        self.max_log = max_log
+        self._log: list[tuple[str, str]] = []  # (speaker, message) history
         self._ok = False
-        self._fig = None
-        self._ax = None
+        self._fig = self._board = self._panel = None
         try:  # interactive backend may be absent (headless) — degrade silently
             import matplotlib.pyplot as plt
 
@@ -36,35 +37,35 @@ class LiveWindow:
 
             plt.ion()
             self._plt = plt
-            self._fig, self._ax = plt.subplots(figsize=(4.6, 5.4))
-            self._fig.legend(handles=legend_handles(), loc="upper center", ncol=3, fontsize=8)
-            self._fig.subplots_adjust(top=0.86, bottom=0.30)  # room for the dialogue caption
+            self._fig, (self._board, self._panel) = plt.subplots(
+                1, 2, figsize=(8.4, 4.8), gridspec_kw={"width_ratios": [1.05, 1]})
+            self._fig.legend(handles=legend_handles(), loc="upper left", ncol=3, fontsize=8)
+            self._fig.subplots_adjust(top=0.86, wspace=0.1)
             self._fig.canvas.manager.set_window_title("CopThief — live")
             self._ok = True
         except Exception:
             self._ok = False
 
     def __call__(self, game: Subgame, message: str = "") -> str:
-        """Redraw the board (and the latest taunt) for the current turn; returns "".
+        """Redraw the board and append the latest taunt to the dialogue log; returns "".
 
-        The mover is the agent that just acted — i.e. the *other* role is now to act —
-        so the caption is coloured for the speaker that produced ``message``.
+        The mover is the agent that just acted — the *other* role is now to act — so the
+        message is attributed to the speaker that produced it.
         """
         if not self._ok:
             return ""
-        from copthief.gui.board_draw import draw_board
+        from copthief.gui.board_draw import draw_board, draw_log
 
         board = game.board
-        speaker = game.turn  # turn already advanced to the next mover; the speaker is the rival
-        speaker = "cop" if speaker.value == "thief" else "thief"
-        self._ax.clear()
-        draw_board(self._ax, board.width, board.height, board.origin,
+        speaker = "cop" if game.turn.value == "thief" else "thief"  # turn already advanced
+        if message:
+            self._log.append((speaker, message))
+        self._board.clear()
+        draw_board(self._board, board.width, board.height, board.origin,
                    game.cop.as_tuple(), game.thief.as_tuple(), board.barriers,
                    title=f"move {game.move_number} · {game.turn.value} to act")
-        if message:
-            wrapped = textwrap.fill(f'{speaker}: "{message}"', width=50)
-            self._ax.set_xlabel(wrapped, fontsize=7, style="italic",
-                                color=_SPEAKER_COLOUR.get(speaker, "0.2"))
+        self._panel.clear()
+        draw_log(self._panel, self._log, max_lines=self.max_log)
         try:
             self._fig.canvas.draw_idle()
             self._plt.pause(self.pause)

@@ -6,10 +6,15 @@ are cell centres, so the cop/thief/barriers render inside the blocks (not on lin
 
 from __future__ import annotations
 
+import textwrap
+
 # NB: this module is backend-neutral on purpose. Headless PNG generators
 # (viewer.py, sequence.py) select the "Agg" backend themselves; the animated
 # window (animate.py / window.py) needs an interactive backend instead.
 from matplotlib.patches import Circle, Rectangle
+
+# Per-speaker colours, shared by the live window and the GIF dialogue captions/log.
+SPEAKER_COLOUR = {"cop": "tab:blue", "thief": "tab:red"}
 
 
 def draw_board(ax, width: int, height: int, origin: int, cop: tuple[int, int],
@@ -42,3 +47,21 @@ def legend_handles():
         Circle((0, 0), 0.3, facecolor="tab:red", label="Thief"),
         Rectangle((0, 0), 1, 1, facecolor="dimgray", label="Barrier"),
     ]
+
+
+def draw_log(ax, entries, max_lines: int = 12) -> None:
+    """Render a scrolling dialogue panel: recent taunts, newest last, coloured by speaker.
+
+    ``entries`` is a list of ``(speaker, message)`` tuples; only the last few are shown so the
+    panel reads like a chat log next to the board.
+    """
+    ax.axis("off")
+    ax.set_title("dialogue", fontsize=9, loc="left")
+    y = 0.99
+    for speaker, message in entries[-max_lines:]:
+        wrapped = textwrap.fill(f'{speaker}: "{message}"', width=38, subsequent_indent="   ")
+        ax.text(0.0, y, wrapped, transform=ax.transAxes, fontsize=6.5, va="top",
+                color=SPEAKER_COLOUR.get(speaker, "0.2"))
+        y -= 0.045 * (wrapped.count("\n") + 1) + 0.015
+        if y < 0.03:
+            break
