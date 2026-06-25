@@ -206,6 +206,12 @@ shape the cop's pursuing tone and the thief's evasive tone.
   *after the opponent's best reply* — the cop minimises distance once the thief flees; the
   thief maximises distance once the cop gives chase (exploiting walls/barriers that cap the
   chase). Strongest of the four; see the arena numbers below.
+- **Belief (probabilistic, partial-observation):** maintains a **Bayes-filter grid** over the
+  opponent's cell ([`belief/grid.py`](src/copthief/belief/grid.py)) — `diffuse` (physics),
+  `observe_not_at` (hard negative info from commit-reveal), `observe_claim` (soft prose nudge)
+  — and runs the lookahead minimax against its most-likely cell. A rival within sight collapses
+  the grid to its exact cell; when it is unseen the cop pursues the highest-probability region.
+  With perfect info it reduces to plain lookahead. Opt-in via `strategy.kind: belief`.
 - **Adaptive:** anticipates the opponent's next cell by linearly extrapolating its last move.
 - **Heuristic:** Chebyshev distance with cornering (cop) / open-cell (thief) tie-breaks.
   Barriers are *need-based* (≤5/subgame) — rarely the best move on an open 5×5.
@@ -345,7 +351,7 @@ in the cents per full match.
 ## 11. Quality & engineering
 
 - **uv** package manager (mandatory); `pyproject.toml` + `uv.lock`.
-- **156 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
+- **178 tests, ~96% coverage** (`pytest --cov`, `fail_under=85`); external HTTP/LLM mocked.
 - **Ruff** clean; every source file **≤ 150 lines**; SDK-layered, OOP/DRY; config-driven
   (no hardcoded game parameters); versioned config validated on startup.
 - **API gatekeeper**: every external LLM/Gmail call routes through one chokepoint enforcing
@@ -493,7 +499,8 @@ All tunable parameters live in `config/` (never hardcoded):
 src/copthief/
   sdk/            single entry point for all logic (SDK layer)
   domain/         board, rules, scoring, subgame state machine, models
-  strategy/       lookahead (minimax) + adaptive + heuristic + tabular Q-learning
+  strategy/       lookahead (minimax) + belief + adaptive + heuristic + tabular Q-learning
+  belief/         Bayes-filter probability grid over the opponent (partial observation)
   llm/            provider abstraction (mock/claude/ollama/api) via API gatekeeper
   agents/         FastMCP cop & thief servers exposing pure tools (no LLM, per PDF §5.2)
   orchestrator/   MCP client (owns the LLM) + match runner: hunt, deception, counter-intel
@@ -501,8 +508,9 @@ src/copthief/
   reporting/      JSON report builder + Gmail emailer
   shared/         config, logging/audit, version, API gatekeeper, token-usage meter
   gui/            live ASCII board, animated GUI window, GIF/PNG/filmstrip renderers
+  replay.py       deterministic audit-log replay (reproducibility / regression guard)
   commands.py     CLI subcommand handlers (main.py is a thin parser/dispatcher)
-docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, COST, BONUS_ASSUMPTIONS
+docs/             PRD, PLAN, TODO, PRD_strategy, PROMPTS, DEPLOYMENT, COST, BONUS_ASSUMPTIONS, adr/
 scripts/          capture_demo (assets), strategy_arena (policy eval), check_line_cap + check_submission (gates)
 config/  tests/  results/  logs/  assets/  notebooks/
 CLAUDE.md         contributor/AI working guide (conventions, layout, run/verify commands)

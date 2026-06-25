@@ -61,7 +61,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Code**: modular, files ≤150 lines, docstrings explain *why*, consistent style (§3)
 - [x] **Architecture**: single SDK entry point; OOP + Template Method, no duplication (§4)
 - [x] **API gatekeeper**: per-minute **and** per-hour throttle, retries, `get_queue_status` (§5)
-- [x] **Testing**: TDD, ≥85% coverage (~96%, 156 tests), edge cases + graceful errors (§6)
+- [x] **Testing**: TDD, ≥85% coverage (~96%, 178 tests), edge cases + graceful errors (§6)
 - [x] **Quality/config/security**: ruff 0 errors, no hardcoded values, `.env.example`, secrets git-ignored (§7)
 - [x] **Versioning & uv**: `version.py` 1.0.0 + config version validated on startup; uv only + `uv.lock` (§8)
 - [x] **Research**: sensitivity sweep + analysis notebook + visualizations (§9)
@@ -81,3 +81,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] **Bugs found & documented** (REPORT §13.1): email-agreement collusion weakness;
       lookahead-thief self-capture (fixed); subtle rules pinned by tests
 - [x] **CLAUDE.md**: contributor/AI working guide (conventions, layout, run/verify)
+- [x] **Belief grid** (`belief/grid.py` + `strategy/belief.py`): Bayes filter (diffuse /
+      negative-info / soft-claim) with lookahead over the most-likely cell — Dec-POMDP upgrade
+- [x] **Deterministic replay** (`replay.py`): re-runs the audit log through the engine and
+      asserts positions + outcomes (reproducibility / regression guard)
+- [x] **ADRs split into `docs/adr/`**: nine numbered decision records (was inline in PLAN.md)

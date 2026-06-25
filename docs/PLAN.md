@@ -45,27 +45,20 @@ decides the move (strategy) and verbalises it (LLM), then calls the agent server
 
 ## 3. Architecture Decision Records (ADRs)
 
-- **ADR-1: SDK facade.** All logic flows through `CopThiefSDK`; GUI/CLI/tests never
-  import internals directly. *Trade-off:* slight indirection for clean boundaries.
-- **ADR-2: LLM lives only in the MCP client (orchestrator), per PDF section 5.2.**
-  The two MCP servers expose pure tools (`reset`/`observe`/`move`/`place_barrier`/`note`)
-  with no LLM and no strategy; the client runs both agent personas (each with its own
-  LLM context, honouring the lecture's "each agent has an LLM"), decides + verbalises,
-  and calls the tools to execute. *Trade-off:* the client is "heavier", but it exactly
-  matches the formal spec and keeps servers trivially deployable/stateless-ish.
-- **ADR-3: Referee holds authoritative state.** Agents keep only *beliefs* (DecPOMDP);
-  the orchestrator validates every action, preventing illegal-move disputes.
-- **ADR-4: HTTP transport even locally.** Prepares for cloud; avoids a stdio→HTTP
-  rewrite later. *Alternative rejected:* stdio for local, HTTP for cloud.
-- **ADR-5: Mock provider is a first-class provider**, not a test stub — it produces
-  and parses the same free text as real providers, keeping CI meaningful and offline.
-- **ADR-6: Config-driven everything.** No game parameter is hardcoded; values live in
-  `config/*.yaml|json`, versioned and validated at startup.
-- **ADR-7: Inter-group bonus is an *additive* peer adapter (`interop/`), not a core change.**
-  The §5.2 single-orchestrator core can't drive an opaque opponent, so the bonus uses a
-  peer-to-peer layer (free-text `deliver_message` + commit-reveal capture verification +
-  byte-identical report digests). *Alternative rejected:* forcing the opponent to expose
-  `move`/`observe` tools (breaks §5.1 free-language and their autonomy). See `docs/PRD_interop.md`.
+Each decision is its own file under [`docs/adr/`](adr/README.md) (Status / Context /
+Decision / Consequences), so decisions are versioned individually and never rewritten.
+
+| ADR | Decision |
+|-----|----------|
+| [0001](adr/0001-sdk-facade.md) | Single SDK facade as the only entry point |
+| [0002](adr/0002-llm-in-mcp-client.md) | The LLM lives only in the MCP client (PDF §5.2) |
+| [0003](adr/0003-referee-authoritative-state.md) | The referee holds authoritative state |
+| [0004](adr/0004-http-transport-local.md) | HTTP transport even for local play |
+| [0005](adr/0005-mock-provider-first-class.md) | The mock LLM provider is first-class |
+| [0006](adr/0006-config-driven.md) | Config-driven everything (no hardcoded parameters) |
+| [0007](adr/0007-interop-additive-adapter.md) | Inter-group bonus is an additive peer adapter |
+| [0008](adr/0008-probabilistic-belief-grid.md) | Probabilistic belief grid (partial observation) |
+| [0009](adr/0009-deterministic-replay.md) | Deterministic replay of the audit log |
 
 ## 4. Interfaces / Contracts
 

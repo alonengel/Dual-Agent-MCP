@@ -28,7 +28,9 @@ referees. Built for UoH Exercise 6. The README doubles as the scientific report.
 | `orchestrator/` | The referee/match loop, perception, negotiation, MCP client |
 | `agents/` | FastMCP servers (cop, thief, combined endpoint) — tools only, no LLM |
 | `llm/` | LLM providers: `mock` (offline default), `claude`, `ollama`, `api` |
-| `strategy/` | Move strategies: lookahead (default, depth-1 minimax), adaptive, heuristic, Q-learning |
+| `strategy/` | Move strategies: lookahead (default, depth-1 minimax), belief, adaptive, heuristic, Q-learning |
+| `belief/` | Bayes-filter probability grid over the opponent (partial observation) |
+| `replay.py` | Deterministic audit-log replay — reproducibility / regression guard |
 | `interop/` | Inter-group (bonus) adapter: messaging, commit-reveal, report hash |
 | `reporting/` | JSON reports (§9.1/9.2) + Gmail emailer |
 | `gui/` | Board rendering — see "GUI / matplotlib" below |
