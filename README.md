@@ -346,7 +346,8 @@ Two honest takeaways: at **equal depth-1, learning beats hand-tuning** (linear F
 minimax *thief* — minimax-vs-minimax is a 1.00 cop win). The search is sub-millisecond per move on
 5×5 thanks to a per-decide transposition table; select it with `strategy.kind: minimax`. The RL and
 search stories are complementary: **RL wins the fixed-horizon contest, search wins outright when
-allowed to look deeper** (regression-guarded by `tests/unit/test_minimax.py`).
+allowed to look deeper** (regression-guarded by `tests/unit/test_minimax.py`). This whole table
+and the depth→win-rate curve are **reproduced live in `notebooks/analysis.ipynb` §7**.
 
 **Negative result — minimax does *not* improve the thief.** Symmetry suggests the same deep
 search should also make the strongest evader, but it does not against the cops it actually faces.
