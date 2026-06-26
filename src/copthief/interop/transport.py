@@ -16,6 +16,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from copthief.constants import Role
+from copthief.shared.run_log import emit
 
 _SKIP_NGROK = {"ngrok-skip-browser-warning": "true"}
 _REPORT_SHA = re.compile(r"REPORT_SHA:([0-9a-f]{64})")
@@ -51,20 +52,19 @@ async def deliver(url: str, token: str, text: str, retries: int = 5) -> None:
         try:
             async with _client(url, token) as client:
                 await client.call_tool("deliver_message", {"text": text})
-            print(f"[deliver] {label} -> ok in {time.monotonic() - start:.1f}s", flush=True)
+            emit("deliver", host=label, status="ok", latency_s=round(time.monotonic() - start, 1))
             return
         except httpx.HTTPStatusError as exc:
             code = exc.response.status_code
             if code < 500 or attempt == retries - 1:
-                print(f"[deliver] {label} -> HTTP {code} (giving up)", flush=True)
+                emit("deliver", host=label, status=f"HTTP {code}", outcome="giving_up")
                 raise
-            print(f"[deliver] {label} -> HTTP {code} (attempt {attempt + 1}/{retries})", flush=True)
+            emit("deliver", host=label, status=f"HTTP {code}", attempt=attempt + 1, retries=retries)
         except Exception as exc:
             if attempt == retries - 1:
-                print(f"[deliver] {label} -> {type(exc).__name__} (giving up)", flush=True)
+                emit("deliver", host=label, error=type(exc).__name__, outcome="giving_up")
                 raise
-            print(f"[deliver] {label} -> {type(exc).__name__} "
-                  f"(attempt {attempt + 1}/{retries})", flush=True)
+            emit("deliver", host=label, error=type(exc).__name__, attempt=attempt + 1, retries=retries)
         await asyncio.sleep(min(2.0 * 2 ** attempt, 10.0))
 
 
@@ -78,7 +78,7 @@ async def read_inbox(url: str, token: str) -> list[str]:
             data = getattr(result, "data", result)
             return list(data.get("messages", [])) if isinstance(data, dict) else []
     except Exception as exc:
-        print(f"[recv] {_label(url)} inbox read failed: {type(exc).__name__}", flush=True)
+        emit("recv_error", host=_label(url), error=type(exc).__name__)
         raise
 
 
@@ -138,8 +138,8 @@ def live_io(ours: dict[str, str], opp: dict[str, str], our_token: str,
                         held[role].setdefault(sg, []).append(msg)
                 waited = time.monotonic() - start
                 if waited >= next_beat:  # heartbeat so a stalled wait is visible, not silent
-                    print(f"[recv] {_label(ours[role.value])} waiting for sg{index} "
-                          f"#{consumed[role] + 1} ({int(waited)}s, inbox={len(history)})", flush=True)
+                    emit("recv_wait", host=_label(ours[role.value]), sub_game=index,
+                         n=consumed[role] + 1, waited_s=int(waited), inbox=len(history))
                     next_beat += 20.0
                 await asyncio.sleep(poll_interval)
 

@@ -26,6 +26,7 @@ from copthief.orchestrator.agent import Agent
 from copthief.reporting.emailer import send_report_email
 from copthief.reporting.report import build_bonus_report, save_report
 from copthief.shared.config import Config
+from copthief.shared.run_log import emit
 from copthief.strategy.factory import build_strategy
 
 OPP_GROUP = {
@@ -46,19 +47,20 @@ async def _confirm_and_email(report: dict, sha: str, ours: dict, opp: dict, our_
     (and only when ``send`` is set — a deliberate press, matching the partner's send policy)."""
     peer_sha = await transport.exchange_hash(sha, opp["cop"], opp_token, ours["cop"], our_token)
     if peer_sha is None:
-        print("[series] no peer hash within timeout -> NOT emailing; confirm + send manually",
-              flush=True)
+        emit("confirm", msg="no peer hash within timeout -> NOT emailing; confirm + send manually",
+             result="timeout")
     elif peer_sha != sha:
-        print(f"[series] HASH MISMATCH peer={peer_sha[:12]}... ours={sha[:12]}... -> NOT emailing "
-              "(§12.2: a mismatch is 0/0, so we abort instead of sending)", flush=True)
+        emit("confirm", msg=f"HASH MISMATCH peer={peer_sha[:12]} ours={sha[:12]} -> NOT emailing "
+             "(§12.2: a mismatch is 0/0)", result="mismatch", peer=peer_sha[:12], ours=sha[:12])
     elif not send:
-        print(f"[series] HASHES MATCH ({sha[:12]}...) -> re-run with --send to email, or send "
-              "the saved report manually", flush=True)
+        emit("hash_match", msg=f"MATCH ({sha[:12]}...) -> re-run with --send to email",
+             sha_prefix=sha[:12], action="manual_send")
     else:
-        print(f"[series] HASHES MATCH ({sha[:12]}...) -> emailing report to {email_to}", flush=True)
+        emit("hash_match", msg=f"MATCH ({sha[:12]}...) -> emailing to {email_to}",
+             sha_prefix=sha[:12], action="email", to=email_to)
         ok = send_report_email(email_to, "CopThief inter-group bonus game report "
                                "(anrbj666 vs ImreEyal)", report, gate=gate)
-        print(f"[series] email {'sent' if ok else 'FAILED (check Gmail setup)'}", flush=True)
+        emit("email_sent", ok=ok, msg=f"email {'sent' if ok else 'FAILED (check Gmail setup)'}")
 
 
 async def _run(opp_cop: str, opp_thief: str, grid_size: int, rounds: int, send: bool,
@@ -88,12 +90,12 @@ async def _run(opp_cop: str, opp_thief: str, grid_size: int, rounds: int, send: 
         send, recv = base_io(index, role)
 
         async def lsend(text: str) -> None:
-            print(f"[ply] sg{index} {role.value} SEND -> {text[:70]}", flush=True)
+            emit("send", msg=f"sg{index} {role.value} -> {text[:70]}", sub_game=index, role=role.value, text=text)
             await send(text)
 
         async def lrecv() -> str:
             msg = await recv()
-            print(f"[ply] sg{index} {role.value} RECV <- {msg[:70]}", flush=True)
+            emit("recv", msg=f"sg{index} {role.value} <- {msg[:70]}", sub_game=index, role=role.value, text=msg)
             return msg
 
         return lsend, lrecv
@@ -105,13 +107,12 @@ async def _run(opp_cop: str, opp_thief: str, grid_size: int, rounds: int, send: 
         return peer_series.derive_starts(seed, i, board0) if seed else fixed
 
     schedule_repr = [r.value for r in peer_series.OUR_SCHEDULE]
-    print(f"[series] provider={provider_name} board={grid_size}x{grid_size} rounds={rounds} "
-          f"seed={seed or '(fixed)'} schedule={schedule_repr}", flush=True)
+    emit("series_start", provider=provider_name, board=f"{grid_size}x{grid_size}", rounds=rounds,
+         seed=seed or "(fixed)", schedule=schedule_repr)
     results = await peer_series.play_series(peer_series.OUR_SCHEDULE, agent_for, io_for,
                                             lambda: _board(config, grid_size), starts_for, rounds)
     for i, (role, outcome, rounds) in enumerate(results):
-        print(f"[series] sub-game {i}: we={role.value} -> {outcome.value} ({rounds} rounds)",
-              flush=True)
+        emit("subgame_result", sub_game=i, we=role.value, outcome=outcome.value, rounds=rounds)
 
     match = peer_series.score_series(results, config.section("scoring"), "anrbj666", "ImreEyal")
     us = {"group_name": config.get("team.group_name", "anrbj666"),
@@ -123,9 +124,9 @@ async def _run(opp_cop: str, opp_thief: str, grid_size: int, rounds: int, send: 
     path = save_report(report, config.root / config.get("reporting.results_dir", "results"),
                        prefix="bonus_game")
     sha = digest(report)
-    print(f"\n[series] totals_by_group={match['totals_by_group']}", flush=True)
-    print(f"[series] report saved: {path}", flush=True)
-    print(f"[series] OUR REPORT SHA-256: {sha}", flush=True)
+    emit("totals", totals_by_group=match["totals_by_group"])
+    emit("report_saved", path=str(path))
+    emit("report_sha", sha256=sha)
     recipient = email_to or config.get("reporting.email_to", "")
     await _confirm_and_email(report, sha, ours, opp, our_token, opp_token, recipient, gate, send)
 

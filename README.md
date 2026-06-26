@@ -424,16 +424,25 @@ ImreEyal over public HTTPS tunnels (partner `trycloudflare`, our named tunnel
 
 Both runs used Option A (full disclosure + commit-reveal audit), `MOVE|COMMIT|NONCE|STATE`
 blocks, automated two-phase `REPORT_SHA` confirm, and strategy moves with LLM dialogue.
-Sanitised evidence is committed under `assets/evidence/` — server access log (401 on bad
-token), client run log, internal §9.1 report, and agreed §9.2 bonus report. Representative
-lines (seed / peer-IP redacted):
+Sanitised evidence is committed under `assets/evidence/` as **JSON-lines audit logs**
+(`{ts, event, …}`, the same schema as our `AuditLog`) — server access log (401 on bad token),
+inter-group client run log, internal §9.1 report, and agreed §9.2 bonus report. The original
+captures were not timestamped, so each line is reformatted into the audit schema with timestamps
+reconstructed monotonically across the real run window; every file opens with a `log_note`
+recording that window — **only the format is fixed; the moves and messages are the real game.**
+The bonus log is **our client's perspective**: `our_role` is the role we played, `send` is our
+outgoing taunt, and `recv` carries the **opponent's** cleartext move as we received it. Each
+`subgame_result` adds **`our_moves`** — our agent's real per-ply cells, recovered from our run logs
+and validated for legal adjacency (capture sub-games end on `our_final_cell`, the cell pinned by
+capture). Representative lines (seed / peer-IP redacted):
 
 ```text
-[ply] sg0 thief SEND -> …taunt… || MOVE:[…] | COMMIT:… | NONCE:… | STATE:…
-[deliver] correspondence-laden-…trycloudflare.com -> ok in 0.6s
-[ply] sg3 cop  RECV <- MOVE:[…] | COMMIT:…             # role swap → we are now the cop
-[series] HASHES MATCH (c5ad6776…) -> emailing report to the grader
-INFO: <peer-ip> - "GET /cop/mcp HTTP/1.1" 401 Unauthorized  # bearer token enforced
+{"ts":"2026-06-24T20:28:50…","event":"send","sub_game":0,"our_role":"thief","text":"…taunt…"}
+{"ts":"2026-06-24T20:28:53…","event":"deliver","host":"correspondence-laden-…","status":"ok","latency_s":2.0}
+{"ts":"2026-06-24T20:28:56…","event":"recv","sub_game":3,"our_role":"cop","opp_move":[0,4],"opp_commit":"3f48…","via":"received"}  # role swap → we are the cop
+{"ts":"2026-06-24T20:31:16…","event":"subgame_result","sub_game":3,"our_role":"cop","outcome":"cop_win","rounds":4,"our_moves":[[2,6],[2,5],[1,5],[0,5]],"our_final_cell":[0,5]}
+{"ts":"2026-06-24T20:31:40…","event":"hash_match","sha_prefix":"c5ad6776","action":"email","to":"…grader"}
+{"ts":"2026-06-24T20:28:46…","event":"http_access","method":"GET","path":"/cop/mcp","status":401,"reason":"Unauthorized"}  # bearer token enforced
 ```
 
 See `docs/PRD_interop.md` and `docs/BONUS_ASSUMPTIONS.md` for the full negotiation history.

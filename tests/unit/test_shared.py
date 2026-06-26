@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 from copthief.shared.config import Config, load_env
 from copthief.shared.gatekeeper import ApiGatekeeper
 from copthief.shared.logger import AuditLog
+from copthief.shared.run_log import RunLog
 from copthief.shared.version import __version__, assert_config_version
 
 
@@ -79,3 +81,26 @@ def test_audit_log_records_lines(tmp_path) -> None:
     assert entry["event"] == "turn"
     assert audit.path.exists()
     assert audit.path.read_text(encoding="utf-8").count("\n") == 1
+
+
+def test_run_log_writes_jsonlines_and_returns_entry(tmp_path) -> None:
+    log = RunLog(tmp_path / "logs" / "bonus.log", echo=False)
+    entry = log.emit("deliver", host="x", status="ok", latency_s=1.2)
+    assert entry["event"] == "deliver" and entry["host"] == "x"
+    line = json.loads(log.path.read_text(encoding="utf-8").splitlines()[0])
+    assert line["ts"] and line["status"] == "ok"
+
+
+def test_run_log_echo_prefers_msg_then_falls_back_to_fields(capsys, tmp_path) -> None:
+    log = RunLog(tmp_path / "b.log")
+    log.emit("send", msg="sg0 thief -> hi", role="thief")
+    log.emit("totals", a=1)
+    out = capsys.readouterr().out
+    assert "sg0 thief -> hi" in out and "a=1" in out
+
+
+def test_module_emit_uses_default_instance(tmp_path, monkeypatch) -> None:
+    import copthief.shared.run_log as rl
+    monkeypatch.setattr(rl, "_default", RunLog(tmp_path / "d.log", echo=False))
+    entry = rl.emit("recv", sub_game=0)
+    assert entry["event"] == "recv" and (tmp_path / "d.log").exists()
